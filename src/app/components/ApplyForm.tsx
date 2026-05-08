@@ -46,7 +46,8 @@ export function ApplyForm({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const payload = {
       type,
       name: String(fd.get("name") || ""),
@@ -67,11 +68,15 @@ export function ApplyForm({
     }
     setLoading(true);
     try {
-      // Mock submit - in production this would call an API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await fetch("/netlify-forms.html", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(fd as unknown as Record<string, string>).toString(),
+      });
+      if (!res.ok) throw new Error("Send failed");
       setDone(true);
       toast.success("Köszönöm, hamarosan jelentkezem!");
-      (e.target as HTMLFormElement).reset();
+      form.reset();
       setDate(undefined);
     } catch {
       toast.error("Sajnos most nem sikerült elküldeni. Próbáld újra.");
