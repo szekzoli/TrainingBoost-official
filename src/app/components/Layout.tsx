@@ -7,7 +7,7 @@ const nav = [
   { to: "/", label: "Főoldal" },
   { to: "/morning-boost", label: "Morning Boost" },
   { to: "/personal-training", label: "Személyi edzés" },
-  { to: "/online-programs", label: "Online programok" },
+  { to: "/outdoor-training", label: "Kültéri edzés" },
   { to: "/contact", label: "Kapcsolat" },
 ] as const;
 
@@ -23,9 +23,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       '/morning-boost': 'Morning Boost — Training Boost — Székely Zoli',
       '/personal-training': 'Személyi edzés — Training Boost — Székely Zoli',
       '/online-programs': 'Online programok — Training Boost — Székely Zoli',
+      '/outdoor-training': 'Kültéri edzés — Training Boost — Székely Zoli',
       '/contact': 'Kapcsolat — Training Boost — Székely Zoli',
     };
     document.title = titles[location.pathname] || 'Training Boost — Székely Zoli';
+  }, [location.pathname]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [location.pathname]);
 
   return (
@@ -105,7 +110,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li><Link to="/morning-boost" className="hover:text-foreground">Morning Boost</Link></li>
               <li><Link to="/personal-training" className="hover:text-foreground">Személyi edzés</Link></li>
-              <li><Link to="/online-programs" className="hover:text-foreground">Online programok</Link></li>
               <li><Link to="/contact" className="hover:text-foreground">Kapcsolat</Link></li>
             </ul>
           </div>

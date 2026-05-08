@@ -7,7 +7,6 @@ const nav = [
   { to: "/", label: "Főoldal" },
   { to: "/morning-boost", label: "Morning Boost" },
   { to: "/personal-training", label: "Személyi edzés" },
-  { to: "/online-programs", label: "Online programok" },
   { to: "/contact", label: "Kapcsolat" },
 ] as const;
 

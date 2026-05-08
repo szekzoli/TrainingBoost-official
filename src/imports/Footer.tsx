@@ -18,7 +18,6 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li><Link to="/morning-boost" className="hover:text-foreground">Morning Boost</Link></li>
             <li><Link to="/personal-training" className="hover:text-foreground">Személyi edzés</Link></li>
-            <li><Link to="/online-programs" className="hover:text-foreground">Online programok</Link></li>
             <li><Link to="/contact" className="hover:text-foreground">Kapcsolat</Link></li>
           </ul>
         </div>

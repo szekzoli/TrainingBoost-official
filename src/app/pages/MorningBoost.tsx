@@ -7,7 +7,7 @@ import morningBoostImage from '../../imports/morning-boost-page.png';
 export default function MorningBoost() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-border bg-gradient-warm">
+      <section className="relative overflow-visible border-b border-border bg-gradient-warm">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-mesh opacity-70"></div>
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
@@ -15,8 +15,8 @@ export default function MorningBoost() {
               <p className="text-sm font-semibold uppercase tracking-wider text-accent">Csoportos edzés</p>
             </Reveal>
             <Reveal delay={1}>
-              <h1 className="mt-3 font-display text-4xl font-bold leading-tight md:text-5xl">
-                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic">indítsd lendülettel</span> a napod
+              <h1 className="mt-3 font-display text-4xl font-bold leading-[1.2] md:leading-[1.15] md:text-5xl">
+                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-2">indítsd lendülettel</span> a napod
               </h1>
             </Reveal>
             <Reveal delay={2}>

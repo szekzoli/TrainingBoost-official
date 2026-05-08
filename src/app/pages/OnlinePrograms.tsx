@@ -5,7 +5,7 @@ import { ApplyForm } from '../components/ApplyForm';
 export default function OnlinePrograms() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-border bg-gradient-warm">
+      <section className="relative overflow-visible border-b border-border bg-gradient-warm">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-mesh opacity-70"></div>
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
@@ -13,7 +13,7 @@ export default function OnlinePrograms() {
               <p className="text-sm font-semibold uppercase tracking-wider text-accent">Online programok</p>
             </Reveal>
             <Reveal delay={1}>
-              <h1 className="mt-3 font-display text-4xl font-bold leading-tight md:text-5xl">
+              <h1 className="mt-3 font-display text-4xl font-bold leading-snug md:text-5xl">
                 Core edzés <span className="bg-gradient-accent bg-clip-text text-transparent italic">bárhol, bármikor</span>
               </h1>
             </Reveal>

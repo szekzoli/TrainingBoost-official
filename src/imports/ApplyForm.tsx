@@ -106,9 +106,22 @@ export function ApplyForm({
 
   return (
     <form
+      name="apply"
+      method="POST"
+      data-netlify="true"
+      data-netlify-honeypot="bot-field"
       onSubmit={onSubmit}
       className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-8"
     >
+      <input type="hidden" name="form-name" value="apply" />
+      <input type="hidden" name="type" value={type} />
+      <input type="hidden" name="slot" value={slotString} />
+      <div hidden>
+        <label>
+          Ne töltsd ki ezt a mezőt, ha ember vagy.
+          <input name="bot-field" />
+        </label>
+      </div>
       <Field label="Név" name="name" required autoComplete="name" />
       <Field label="Email" name="email" type="email" required autoComplete="email" />
       {showPhone && <Field label="Telefon (opcionális)" name="phone" type="tel" autoComplete="tel" />}
