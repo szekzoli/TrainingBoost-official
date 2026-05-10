@@ -65,26 +65,36 @@
               <Reveal className="text-center">
                 <p className="text-sm font-semibold uppercase tracking-wider text-accent">Rólam</p>
                 <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">
-                  Sport — gyermekkorom óta a szenvedélyem
+                  Amit a sport adott — és amit továbbadok
                 </h2>
               </Reveal>
 
-              <Reveal delay={1}>
-                <p className="mt-6 text-lg text-muted-foreground">
-                  Székely Zoli vagyok. A sport már gyerekkorom óta végigkíséri az életemet: versenyszerűen judoztam, ahol megtanultam a testtudat és a küzdelem alapjait. Ezt a szenvedélyt később szakmai alapokra helyeztem, és személyi edzőként azóta is folyamatosan képzem magam, hogy a legfrissebb tudással támogathassalak.
-                </p>
-                <p className="mt-4 text-lg text-muted-foreground">
-                  Számomra a sport nem csupán izomépítés, hanem az egészség és a mobilitás megőrzése.
-                  Edzéseimena  funkcionális fejlődésre helyezem a fő fókuszt: az  <strong className="text-foreground">erő-állóképesség</strong>, a <strong className="text-foreground">core erő</strong>, a <strong className="text-foreground">mobilitás</strong> és az <strong className="text-foreground">egylábas erő</strong> fejlesztésére.
-                </p>
-              </Reveal>
+<Reveal delay={1}>
+  <div className="mt-6 space-y-6 text-lg text-muted-foreground">
+    <p>
+      Székely Zoli vagyok, személyi edző. A sport gyerekkorom óta az életem része: versenyszerűen judoztam, ahol nemcsak technikát tanultam, hanem erőt, állóképességet, kitartást és azt a mentális hozzáállást, ami a fejlődéshez kell. Ez az alap a mai napig meghatározza az edzésfilozófiámat.
+    </p>
+
+    <p>
+      Ezt a szemléletet később szakmai tudással egészítettem ki. Edzőként folyamatosan képzem magam, mert hiszek abban, hogy a valódi eredmények mögött érthető, jól felépített rendszer áll. Kifejezetten érdekel az edzés tudományos háttere, az izmok működése és az, hogyan lehet a testet hosszú távon egészségesen és hatékonyan fejleszteni.
+    </p>
+
+    <p>
+      A mai ülő életmód rengeteg problémát hoz magával, miközben sokan kizárólag az izomépítésre fókuszálnak. Én komplexen gondolkodom: az erő, az erő-állóképesség, a mobilitás és a core stabilitás együtt adják azt az alapot, amire valóban lehet építeni. Nem csak rövid távú változást, hanem tartós, fenntartható fejlődést.
+    </p>
+
+    <p>
+      Hiszek a kemény, de okosan felépített edzésben. Szeretek motiválni, kihívást adni, és kihozni az emberekből a maximumot — úgy, hogy közben végig biztonságosan és tudatosan haladunk. Számomra a siker nem csak a látványos eredményekben mérhető, hanem abban, amikor valaki erősebbé, magabiztosabbá és energikusabbá válik a mindennapokban.
+    </p>
+  </div>
+</Reveal>
             </div>
 
             <div className="mt-16">
               <Reveal className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-wider text-accent">Alapelvek</p>
                 <h2 className="mt-2 font-display text-2xl font-bold md:text-3xl">
-                  Négy pillér, amire minden edzés épül
+                  Négy pillér, amire az edzések épülnek
                 </h2>
               </Reveal>
 
