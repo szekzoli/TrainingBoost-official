@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, MapPin, Wallet, Ticket, ExternalLink, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowRight, MapPin, Wallet, Ticket, ExternalLink, Sparkles, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
@@ -24,20 +24,12 @@ export default function OutdoorTraining() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mt-5 text-lg text-muted-foreground">
-                Kültéri csoportos edzés Gödön, a strand melletti szabadtéri edzőparkban.
+                A kültéri edzés egyelőre szünetel. Ha érdekel, érdeklődj üzenetben — értesítelek, amint újraindul.
               </p>
             </Reveal>
 
             <Reveal delay={2}>
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                    <Clock className="h-4 w-4 text-accent" />
-                  </div>
-                  <p className="text-sm">
-                    <strong className="text-foreground">Péntek</strong> 18:15
-                  </p>
-                </div>
+              <div className="mt-6">
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
                     <MapPin className="h-4 w-4 text-accent" />
@@ -52,7 +44,7 @@ export default function OutdoorTraining() {
             <Reveal delay={3}>
               <div className="mt-8">
                 <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-gradient-accent px-8 py-3.5 text-base font-semibold text-accent-foreground shadow-[var(--shadow-elegant)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-                  Érdekel a kültéri edzés
+                  Érdeklődöm
                   <ArrowRight className="h-5 w-5" />
                 </a>
               </div>
@@ -185,20 +177,17 @@ export default function OutdoorTraining() {
 
       <section id="apply" className="mx-auto max-w-3xl px-4 pb-24 scroll-mt-20">
         <Reveal className="text-center">
-          <h2 className="font-display text-3xl font-bold md:text-4xl">Jelentkezz</h2>
+          <h2 className="font-display text-3xl font-bold md:text-4xl">Érdeklődés</h2>
           <p className="mt-2 text-muted-foreground">
-            Időpont: <strong>péntek 18:15</strong>. Jelentkezz, és emailben visszaigazolom a részleteket.
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Más időpont lenne jó? Írd meg az üzenet mezőben!
+            Küldj üzenetet, és értesítelek, amint a kültéri edzés újraindul.
           </p>
         </Reveal>
 
         <Reveal delay={1} className="mt-10">
           <ApplyForm
             type="outdoor-training"
-            submitLabel="Jelentkezem kültéri edzésre"
-            messagePlaceholder="Pl. korábbi edzéstapasztalat, esetleges sérülések…"
+            submitLabel="Érdeklődöm"
+            messagePlaceholder="Pl. mikor lenne jó, milyen edzéscélod van…"
           />
         </Reveal>
 

@@ -161,7 +161,7 @@ export default function PersonalTraining() {
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">Egy edzés: 9 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  A díjat közvetlenül nálam tudod rendezni. Tartalmazza a terembe lépést is — nincs rejtett költség.
+                  A díjat közvetlenül nálam tudod rendezni.
                 </p>
               </div>
             </Reveal>
