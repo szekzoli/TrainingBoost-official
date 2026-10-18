@@ -12,7 +12,25 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-VH1HVL18W2');
+        // /app/t/<kod>: a titkos kód ne kerüljön a GA4-be (page_location / page_referrer)
+        (function () {
+          var hide = function (u) {
+            return String(u || '').replace(/(\/app\/t\/)[^/?#]+/, '$1[kod]');
+          };
+          if (location.pathname.indexOf('/app') === 0) {
+            // /app oldalak: ne indexeljék, és ne menjen ki referrer
+            var robots = document.createElement('meta');
+            robots.name = 'robots'; robots.content = 'noindex, nofollow';
+            var ref = document.createElement('meta');
+            ref.name = 'referrer'; ref.content = 'no-referrer';
+            document.head.appendChild(robots);
+            document.head.appendChild(ref);
+          }
+          gtag('config', 'G-VH1HVL18W2', {
+            page_location: hide(location.href),
+            page_referrer: hide(document.referrer)
+          });
+        })();
       </script>
     </head>
 
