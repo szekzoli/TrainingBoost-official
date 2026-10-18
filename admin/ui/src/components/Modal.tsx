@@ -6,11 +6,14 @@ export default function Modal({
   onClose,
   children,
   wide = false,
+  dismissible = true,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  /** false: Esc és a háttérre kattintás nem zárja be (pl. az egyszer látható hozzáférési link). */
+  dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -25,10 +28,10 @@ export default function Modal({
       ref={ref}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        if (dismissible) onClose();
       }}
       onClick={(e) => {
-        if (e.target === ref.current) onClose();
+        if (dismissible && e.target === ref.current) onClose();
       }}
       className={`m-auto w-full rounded-[14px] border border-line bg-white p-0 text-navy shadow-xl backdrop:bg-navy/40 ${
         wide ? 'max-w-2xl' : 'max-w-md'

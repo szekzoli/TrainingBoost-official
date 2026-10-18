@@ -93,6 +93,17 @@ export type PlanCreate = {
   is_template?: boolean;
 };
 
+export type ClientRow = {
+  id: string;
+  label: string;
+  plan_id: string;
+  plan_title: string;
+  plan_slug: string;
+  created_at: string;
+  revoked_at: string | null;
+  consent_at: string | null;
+};
+
 export type Status = { configured: true } | { configured: false; problems: string[] };
 
 export class ApiFailure extends Error {
@@ -171,6 +182,16 @@ export const api = {
     request<{ id: string }>('POST', `/api/plans/${id}/from-template`, input),
   copyWeek: (id: string, from_week: number, to_week: number) =>
     request<{ days: number; exercises: number }>('POST', `/api/plans/${id}/copy-week`, { from_week, to_week }),
+
+  // Ügyfelek (a hozzáférési link csak a létrehozás válaszában van meg, egyszer)
+  listClients: () => request<{ clients: ClientRow[] }>('GET', '/api/clients').then((r) => r.clients),
+  getClient: (id: string) =>
+    request<{ client: ClientRow & { log_count: number } }>('GET', `/api/clients/${id}`).then((r) => r.client),
+  createClient: (input: { label: string; plan_id: string }) =>
+    request<{ client: ClientRow; link: string }>('POST', '/api/clients', input),
+  regenerateLink: (id: string) => request<{ client: ClientRow; link: string }>('POST', `/api/clients/${id}/new-link`, {}),
+  updateClient: (id: string, input: { label?: string; plan_id?: string; revoked?: boolean }) =>
+    request<{ client: ClientRow }>('PATCH', `/api/clients/${id}`, input).then((r) => r.client),
 
   // Napok
   addDay: (planId: string, week: number) => request<{ id: string }>('POST', `/api/plans/${planId}/days`, { week }),

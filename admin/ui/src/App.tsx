@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, type Status } from './api';
 import Exercises from './pages/Exercises';
-import Placeholder from './pages/Placeholder';
+import Clients from './pages/Clients';
 import PlanEditor from './pages/PlanEditor';
 import Plans from './pages/Plans';
 
@@ -86,7 +86,7 @@ export default function App() {
             <Route path="/sablonok" element={<Plans key="templates" templates />} />
             <Route path="/terv/:id" element={<PlanEditor />} />
             <Route path="/gyakorlattar" element={<Exercises />} />
-            <Route path="/ugyfelek" element={<Placeholder title="Ügyfelek" stage="C" />} />
+            <Route path="/ugyfelek" element={<Clients />} />
             <Route path="*" element={<Navigate to="/tervek" replace />} />
           </Routes>
         )}

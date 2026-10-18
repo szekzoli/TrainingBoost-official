@@ -5,6 +5,7 @@ import { API_PORT, HOST, UI_PORT } from '../ports.ts';
 import { loadConfig, type ConfigResult } from './config.ts';
 import { ApiError, createDb, dbError, unknownError, type SupabaseClient } from './db.ts';
 import { createExercise, deleteExercise, listExercises, updateExercise } from './exercises.ts';
+import { createClient, getClient, listClients, regenerateLink, updateClient } from './clients.ts';
 import { addDay, addRow, deleteDay, deleteRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
 import {
   copyPlan,
@@ -160,6 +161,23 @@ async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
       default:
         return { status: 201, body: await addDay(db, m[1], body) };
     }
+  }
+
+  // --- Ügyfelek (a hozzáférési kód csak a létrehozás válaszában szerepel, egyszer)
+  if (path === '/api/clients') {
+    if (method === 'GET') return { status: 200, body: { clients: await listClients(db) } };
+    if (method === 'POST') return { status: 201, body: await createClient(db, await readJson(req), ctx.baseUrl) };
+    throw noMethod();
+  }
+  if ((m = matchPath(path, '/api/clients/:id'))) {
+    if (method === 'GET') return { status: 200, body: { client: await getClient(db, m[1]) } };
+    if (method === 'PATCH') return { status: 200, body: { client: await updateClient(db, m[1], await readJson(req)) } };
+    throw noMethod();
+  }
+
+  if ((m = matchPath(path, '/api/clients/:id/new-link'))) {
+    if (method !== 'POST') throw noMethod();
+    return { status: 200, body: await regenerateLink(db, m[1], ctx.baseUrl) };
   }
 
   // --- Napok és gyakorlat-sorok
