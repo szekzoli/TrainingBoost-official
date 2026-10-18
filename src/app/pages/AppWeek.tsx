@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone } from '../components/app/plan-utils';
 
@@ -10,9 +10,19 @@ export default function AppWeek() {
 
   return (
     <div className="space-y-5">
-      <Link to="/app" className="inline-flex items-center text-sm text-app-navy/70">
-        <ChevronLeft className="size-4" /> Vissza
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to="/app" className="-ml-1 inline-flex min-h-11 items-center pr-3 text-sm text-app-navy/70">
+          <ChevronLeft className="size-4" /> Vissza
+        </Link>
+        {days.length > 0 && (
+          <Link
+            to={`/app/print/${week}`}
+            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-[#D5DDE6] px-3 text-sm font-semibold text-app-navy"
+          >
+            <Printer className="size-4" /> PDF
+          </Link>
+        )}
+      </div>
       <h1 className="text-2xl font-bold">{week}. hét</h1>
 
       {days.length === 0 ? (

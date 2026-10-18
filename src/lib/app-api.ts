@@ -9,6 +9,7 @@ export type PlanExercise = {
   group_label: string | null;
   sets: number;
   reps: string;
+  resistance: string | null;
   rest_seconds: number | null;
   note: string | null;
   exercise: {

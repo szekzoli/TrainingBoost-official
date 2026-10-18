@@ -14,6 +14,8 @@ const AppShell = lazy(() => import('./components/app/AppShell'));
 const AppHome = lazy(() => import('./pages/AppHome'));
 const AppWeek = lazy(() => import('./pages/AppWeek'));
 const AppDay = lazy(() => import('./pages/AppDay'));
+const AppExercise = lazy(() => import('./pages/AppExercise'));
+const AppPrint = lazy(() => import('./pages/AppPrint'));
 const AppSettings = lazy(() => import('./pages/AppSettings'));
 
 export default function App() {
@@ -36,7 +38,9 @@ export default function App() {
           <Route path="t/:code" element={null} />
           <Route path="w/:week" element={<Suspense fallback={null}><AppWeek /></Suspense>} />
           <Route path="d/:week/:day" element={<Suspense fallback={null}><AppDay /></Suspense>} />
-          <Route path="settings" element={<Suspense fallback={null}><AppSettings /></Suspense>} />
+          <Route path="e/:week/:day/:dayExerciseId" element={<Suspense fallback={null}><AppExercise /></Suspense>} />
+          <Route path="print/:week" element={<Suspense fallback={null}><AppPrint /></Suspense>} />
+          <Route path="settings"element={<Suspense fallback={null}><AppSettings /></Suspense>} />
         </Route>
       </Routes>
     </BrowserRouter>

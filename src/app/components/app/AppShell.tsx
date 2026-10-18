@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useMatch } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { SessionProvider, useSession } from './session';
@@ -38,7 +38,8 @@ function Message({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Gate() {
+// bare: a nyomtatási nézet teljes szélességű, ezért csak a hiba/állapot üzenetek kapnak keskeny keretet
+function Gate({ bare = false }: { bare?: boolean }) {
   const { status, reload, consentOpen } = useSession();
 
   let body: React.ReactNode;
@@ -94,7 +95,7 @@ function Gate() {
 
   return (
     <>
-      {body}
+      {bare && status !== 'ready' ? <div className="mx-auto max-w-md px-4 py-6">{body}</div> : body}
       {consentOpen && <ConsentScreen />}
     </>
   );
@@ -102,23 +103,31 @@ function Gate() {
 
 export default function AppShell() {
   useAppHead();
+  // /app/print/:week: fejléc és keskeny oszlop nélkül, hogy a nyomtatás A4-es oldalakat adjon
+  const printView = useMatch('/app/print/:week') !== null;
   return (
     <SessionProvider>
-      <div className="min-h-screen bg-white text-app-navy">
-        <header className="border-b border-app-navy/15">
-          <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
-            <Link to="/app" className="text-base font-bold tracking-tight">
-              Training<span className="text-app-teal">Boost</span>
-            </Link>
-            <Link to="/app/settings" aria-label="Beállítások" className="p-2 text-app-navy/70">
-              <Settings className="size-5" />
-            </Link>
-          </div>
-        </header>
-        <main className="mx-auto max-w-md px-4 py-6">
-          <Gate />
-        </main>
-      </div>
+      {printView ? (
+        <div className="min-h-screen bg-white text-app-navy">
+          <Gate bare />
+        </div>
+      ) : (
+        <div className="min-h-screen bg-white text-app-navy">
+          <header className="border-b border-app-navy/15">
+            <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
+              <Link to="/app" className="text-base font-bold tracking-tight">
+                Training<span className="text-app-teal">Boost</span>
+              </Link>
+              <Link to="/app/settings" aria-label="Beállítások" className="p-2 text-app-navy/70">
+                <Settings className="size-5" />
+              </Link>
+            </div>
+          </header>
+          <main className="mx-auto max-w-md px-4 py-6">
+            <Gate />
+          </main>
+        </div>
+      )}
     </SessionProvider>
   );
 }

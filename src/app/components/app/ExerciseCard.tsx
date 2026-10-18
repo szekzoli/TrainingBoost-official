@@ -1,11 +1,19 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ChevronDown, Play } from 'lucide-react';
+import { Check, Info, Play } from 'lucide-react';
 import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/app-api';
 import { getVideoEmbedUrl } from '../../../lib/video';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import PrescriptionBar from './PrescriptionBar';
 import { useSession } from './session';
-import { previousSets } from './plan-utils';
+import {
+  formatSet,
+  isLoggable,
+  isSetDone,
+  previousSets,
+  repsPlaceholder,
+  weightPlaceholder,
+} from './plan-utils';
 
 const fmtWeight = (n: number | null | undefined) =>
   n === null || n === undefined ? '' : String(n).replace('.', ',');
@@ -24,82 +32,129 @@ function parseReps(s: string): number | null | 'invalid' {
   return Number.isInteger(n) && n >= 0 && n <= 1000 ? n : 'invalid';
 }
 
+const inputClass =
+  'h-11 w-full rounded-[10px] border border-[#D5DDE6] bg-white px-1 text-center text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal';
+
 function SetRow({
   dayExerciseId,
   setNumber,
   saved,
   prev,
+  weightPh,
+  repsPh,
 }: {
   dayExerciseId: string;
   setNumber: number;
   saved: SetLog | undefined;
   prev: SetLog | undefined;
+  weightPh: string;
+  repsPh: string;
 }) {
   const { logSet } = useSession();
   const [weight, setWeight] = useState(fmtWeight(saved?.weight_kg));
   const [reps, setReps] = useState(saved?.reps?.toString() ?? '');
-  const [state, setState] = useState<'idle' | 'saving' | 'saved'>(saved ? 'saved' : 'idle');
+  const [saving, setSaving] = useState(false);
+  const done = isSetDone(saved);
 
-  const commit = async () => {
-    const w = parseWeight(weight);
-    const r = parseReps(reps);
+  const restore = () => {
+    setWeight(fmtWeight(saved?.weight_kg));
+    setReps(saved?.reps?.toString() ?? '');
+  };
+
+  /** Mentés; a (null, null) pár a sor visszavonását jelenti (nincs külön RPC). */
+  const save = async (w: number | null, r: number | null) => {
+    setSaving(true);
+    try {
+      const ok = await logSet(dayExerciseId, setNumber, w, r);
+      if (!ok) restore(); // hozzájárulás nélkül nem mentünk
+    } catch {
+      restore();
+      toast.error('Nem sikerült menteni. Ellenőrizd a kapcsolatot, és próbáld újra.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggle = async () => {
+    if (saving) return;
+    if (done) {
+      setWeight('');
+      setReps('');
+      await save(null, null);
+      return;
+    }
+    let w = parseWeight(weight);
+    let r = parseReps(reps);
     if (w === 'invalid' || r === 'invalid') {
       toast.error('Érvénytelen érték: súlyhoz szám, ismétléshez egész szám kell.');
       return;
     }
-    if (w === (saved?.weight_kg ?? null) && r === (saved?.reps ?? null)) return;
-    if (!saved && w === null && r === null) return;
-
-    setState('saving');
-    try {
-      const ok = await logSet(dayExerciseId, setNumber, w, r);
-      if (ok) {
-        setState('saved');
-      } else {
-        // hozzájárulás nélkül nem mentünk: visszaállítjuk az utolsó mentett értéket
-        setWeight(fmtWeight(saved?.weight_kg));
-        setReps(saved?.reps?.toString() ?? '');
-        setState(saved ? 'saved' : 'idle');
+    if (w === null && r === null) {
+      // üres sor: az előírás értékével töltjük ki
+      w = parseWeight(weightPh) as number | null;
+      r = parseReps(repsPh) as number | null;
+      if (w === null && r === null) {
+        toast.info('Írd be a súlyt vagy az ismétlést.');
+        return;
       }
-    } catch {
-      setState('idle');
-      toast.error('Nem sikerült menteni. Ellenőrizd a kapcsolatot, és próbáld újra.');
+      setWeight(fmtWeight(w));
+      setReps(r?.toString() ?? '');
     }
+    await save(w, r);
   };
 
-  const inputClass =
-    'h-11 w-full rounded-md border border-app-navy/25 bg-white px-3 text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal';
+  // Kész sor módosítása: blur-ra mentünk. Nem kész sort csak a pipa ment.
+  const commitEdit = async () => {
+    if (!done || saving) return;
+    const w = parseWeight(weight);
+    const r = parseReps(reps);
+    if (w === 'invalid' || r === 'invalid') {
+      toast.error('Érvénytelen érték: súlyhoz szám, ismétléshez egész szám kell.');
+      restore();
+      return;
+    }
+    if (w === saved.weight_kg && r === saved.reps) return;
+    await save(w, r);
+  };
 
   return (
-    <div className="grid grid-cols-[2.5rem_1fr_1fr_1.25rem] items-center gap-2">
-      <span className="text-sm text-app-navy/60">{setNumber}.</span>
+    <div
+      className={`grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] items-center gap-1.5 rounded-[10px] border px-1.5 py-1 ${
+        done ? 'border-app-teal/40 bg-[#EAF6F3]' : 'border-transparent'
+      }`}
+    >
+      <span className="text-sm font-semibold text-[#5B6B7D]">{setNumber}</span>
+      <span className="text-[11px] leading-tight text-[#5B6B7D]">{prev ? formatSet(prev) : '–'}</span>
       <input
         inputMode="decimal"
-        aria-label={`${setNumber}. szet súly (kg)`}
-        placeholder={prev?.weight_kg != null ? `${fmtWeight(prev.weight_kg)}` : 'kg'}
+        aria-label={`${setNumber}. sorozat súly (kg)`}
+        placeholder={weightPh}
         value={weight}
-        onChange={(e) => {
-          setWeight(e.target.value);
-          setState('idle');
-        }}
-        onBlur={commit}
+        onChange={(e) => setWeight(e.target.value)}
+        onBlur={commitEdit}
         className={inputClass}
       />
       <input
         inputMode="numeric"
-        aria-label={`${setNumber}. szet ismétlés`}
-        placeholder={prev?.reps != null ? `${prev.reps}` : 'ism.'}
+        aria-label={`${setNumber}. sorozat ismétlés`}
+        placeholder={repsPh}
         value={reps}
-        onChange={(e) => {
-          setReps(e.target.value);
-          setState('idle');
-        }}
-        onBlur={commit}
+        onChange={(e) => setReps(e.target.value)}
+        onBlur={commitEdit}
         className={inputClass}
       />
-      <span className="text-xs text-app-teal" aria-live="polite">
-        {state === 'saved' ? '✓' : state === 'saving' ? '…' : ''}
-      </span>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={saving}
+        aria-pressed={done}
+        aria-label={done ? `${setNumber}. sorozat kész, visszavonás` : `${setNumber}. sorozat kész`}
+        className={`flex size-11 items-center justify-center rounded-[10px] border transition disabled:opacity-50 ${
+          done ? 'border-app-teal bg-app-teal text-white' : 'border-[#D5DDE6] bg-white text-app-navy/30'
+        }`}
+      >
+        <Check className="size-5" strokeWidth={3} />
+      </button>
     </div>
   );
 }
@@ -109,56 +164,67 @@ export default function ExerciseCard({
   planDayId,
   plan,
   logs,
+  detailsHref,
+  marker,
+  embedded = false,
 }: {
   item: PlanExercise;
   planDayId: string;
   plan: PlanData;
   logs: WorkoutLog[];
+  detailsHref: string;
+  /** Szuperszett jelölő (A1, A2…), a gyakorlat neve előtt. */
+  marker?: string;
+  /** Szuperszett-csoporton belül: nincs saját keret és sugár, a csoport közös kerete veszi körül. */
+  embedded?: boolean;
 }) {
-  const [videoOpen, setVideoOpen] = useState(false);
-  const embed = getVideoEmbedUrl(item.exercise.video_url);
   const currentLog = logs.find((l) => l.plan_day_id === planDayId);
   const prev = previousSets(plan, logs, planDayId, item.exercise.id);
-  // Pl. a nyújtás ("–") nem naplózható szetekből áll
-  const loggable = /[\p{L}\d]/u.test(item.reps);
+  const hasVideo = getVideoEmbedUrl(item.exercise.video_url) !== null;
+  const hasDetails = hasVideo || !!item.note?.trim() || !!item.exercise.technique_note?.trim();
+  const weightPh = weightPlaceholder(item.resistance);
+  const repsPh = repsPlaceholder(item.reps);
 
   return (
-    <article className="border border-app-navy/15 bg-white p-4">
-      <h3 className="text-base font-semibold leading-snug">{item.exercise.name}</h3>
-      <p className="mt-1 text-sm text-app-navy/70">
-        {item.sets} × {item.reps}
-        {item.rest_seconds ? ` · pihenő ${item.rest_seconds} mp` : ''}
-      </p>
-      {item.note && <p className="mt-2 text-sm leading-relaxed text-app-navy/80">{item.note}</p>}
-      {item.exercise.technique_note && (
-        <p className="mt-2 text-sm leading-relaxed text-app-navy/60">{item.exercise.technique_note}</p>
-      )}
+    <article className={embedded ? 'bg-white' : 'overflow-hidden rounded-[14px] border border-[#D5DDE6] bg-white'}>
+      <div className="flex items-center gap-3 px-3 py-3">
+        {hasVideo && (
+          <Link
+            to={detailsHref}
+            aria-label={`${item.exercise.name} videó`}
+            className="flex size-[52px] shrink-0 items-center justify-center rounded-[10px] border border-app-teal/40 bg-[#EAF6F3] text-app-teal"
+          >
+            <Play className="size-5 fill-current" />
+          </Link>
+        )}
+        {marker && (
+          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-[#0B7566] text-sm font-bold text-[#0B7566]">
+            {marker}
+          </span>
+        )}
+        <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug">{item.exercise.name}</h3>
+        {hasDetails && (
+          <Link
+            to={detailsHref}
+            aria-label={`${item.exercise.name} részletei`}
+            className="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-[10px] text-app-navy/60"
+          >
+            <Info className="size-5" />
+          </Link>
+        )}
+      </div>
 
-      {embed && (
-        <Collapsible open={videoOpen} onOpenChange={setVideoOpen} className="mt-3">
-          <CollapsibleTrigger className="flex h-10 items-center gap-2 text-sm font-semibold text-app-teal">
-            <Play className="size-4" /> Videó
-            <ChevronDown className={`size-4 transition-transform ${videoOpen ? 'rotate-180' : ''}`} />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="mt-2 aspect-video w-full overflow-hidden border border-app-navy/15">
-              {/* Csak nyitáskor töltődik be. A YouTube a beágyazáshoz kér origin-referrert; teljes URL nem megy ki. */}
-              <iframe
-                src={embed}
-                title={`${item.exercise.name} videó`}
-                className="size-full"
-                loading="lazy"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allow="encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+      <PrescriptionBar item={item} />
 
-      {loggable && (
-        <div className="mt-3 space-y-2">
+      {isLoggable(item) && (
+        <div className="space-y-1 px-3 py-3">
+          <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] gap-1.5 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#5B6B7D]">
+            <span>Sor</span>
+            <span>Előző</span>
+            <span className="text-center">Kg</span>
+            <span className="text-center">Ism.</span>
+            <span className="text-center">✓</span>
+          </div>
           {Array.from({ length: item.sets }, (_, i) => i + 1).map((n) => (
             <SetRow
               key={n}
@@ -166,11 +232,10 @@ export default function ExerciseCard({
               setNumber={n}
               saved={currentLog?.sets.find((s) => s.day_exercise_id === item.id && s.set_number === n)}
               prev={prev.get(n)}
+              weightPh={weightPh}
+              repsPh={repsPh}
             />
           ))}
-          {prev.size > 0 && (
-            <p className="text-xs text-app-navy/50">A halvány értékek az előző alkalomról valók.</p>
-          )}
         </div>
       )}
     </article>

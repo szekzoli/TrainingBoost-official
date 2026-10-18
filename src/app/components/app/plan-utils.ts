@@ -29,6 +29,51 @@ export function groupExercises(exercises: PlanExercise[]): Section[] {
   return sections;
 }
 
+/** Szuperszett: legalább két, egymást követő, azonos nem üres group_label-ű gyakorlat. */
+export const isSuperset = (block: ExerciseBlock) => !!block.label && block.items.length >= 2;
+
+/** Pl. a nyújtás ("–") nem naplózható szetekből áll. */
+export const isLoggable = (item: PlanExercise) => /[\p{L}\d]/u.test(item.reps);
+
+/** Egy sor akkor kész, ha van mentett súlya vagy ismétlése (a pipa levétele üres értéket ment). */
+export const isSetDone = (s: SetLog | undefined): s is SetLog =>
+  !!s && (s.weight_kg !== null || s.reps !== null);
+
+export function setsOf(log: WorkoutLog | undefined, dayExerciseId: string): SetLog[] {
+  return log?.sets.filter((s) => s.day_exercise_id === dayExerciseId && isSetDone(s)) ?? [];
+}
+
+/** Kész / összes sorozat a megadott gyakorlatokra (csak a naplózható gyakorlatok számítanak). */
+export function setProgress(items: PlanExercise[], log: WorkoutLog | undefined) {
+  let done = 0;
+  let total = 0;
+  for (const it of items) {
+    if (!isLoggable(it)) continue;
+    total += it.sets;
+    done += setsOf(log, it.id).filter((s) => s.set_number <= it.sets).length;
+  }
+  return { done, total };
+}
+
+/** A kg mező placeholderje: az ellenállás elején álló szám, tizedesponttal ("22,5 kg" → "22.5"). */
+export function weightPlaceholder(resistance: string | null): string {
+  const m = resistance?.trim().match(/^\d+(?:[.,]\d+)?/);
+  return m ? m[0].replace(',', '.') : '';
+}
+
+/** Az ismétlés mező placeholderje: az előírás első egész száma. */
+export function repsPlaceholder(reps: string): string {
+  return reps.match(/\d+/)?.[0] ?? '';
+}
+
+/** Rögzített sorozat rövid szövege: "10 kg × 10". */
+export function formatSet(s: SetLog): string {
+  const w = s.weight_kg !== null ? `${String(s.weight_kg).replace('.', ',')} kg` : null;
+  if (w && s.reps !== null) return `${w} × ${s.reps}`;
+  if (w) return w;
+  return `× ${s.reps}`;
+}
+
 /** Az adott gyakorlat legutóbbi, MÁS napon rögzített szetjei (szetszám szerint). */
 export function previousSets(
   plan: PlanData,
