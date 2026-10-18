@@ -4,7 +4,8 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ENV_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '.env.local');
+// Az ADMIN_ENV_FILE csak teszteléshez való eltérő útvonal; alapértelmezés: admin/.env.local
+const ENV_FILE = process.env.ADMIN_ENV_FILE || join(dirname(fileURLToPath(import.meta.url)), '..', '.env.local');
 
 export type Config = {
   supabaseUrl: string;

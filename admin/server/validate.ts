@@ -19,12 +19,12 @@ export function assertUuid(value: unknown, field = 'id'): string {
 }
 
 // Vezérlőkarakterek nélkül (a sortörés és a tabulátor megmarad, ha engedett)
-function clean(s: string, allowNewlines: boolean): string {
+export function clean(s: string, allowNewlines: boolean): string {
   const re = allowNewlines ? /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g : /[\u0000-\u001F\u007F]/g;
   return s.normalize('NFC').replace(/\r\n?/g, '\n').replace(re, '');
 }
 
-function optionalText(
+export function optionalText(
   v: unknown,
   field: string,
   label: string,

@@ -5,6 +5,17 @@ import { API_PORT, HOST, UI_PORT } from '../ports.ts';
 import { loadConfig, type ConfigResult } from './config.ts';
 import { ApiError, createDb, dbError, unknownError, type SupabaseClient } from './db.ts';
 import { createExercise, deleteExercise, listExercises, updateExercise } from './exercises.ts';
+import { addDay, addRow, deleteDay, deleteRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
+import {
+  copyPlan,
+  copyWeek,
+  createPlan,
+  deletePlan,
+  getPlan,
+  listPlans,
+  planFromTemplate,
+  updatePlan,
+} from './plans.ts';
 import { ValidationError } from './validate.ts';
 
 const ALLOWED_ORIGINS = new Set([`http://${HOST}:${UI_PORT}`, `http://localhost:${UI_PORT}`]);
@@ -73,19 +84,40 @@ type Ctx = {
   baseUrl: string;
 };
 
+const PLAN_ACTIONS = ['copy', 'save-as-template', 'from-template', 'copy-week', 'days'];
+
+// '/api/plans/:id/copy' jellegű minták illesztése; az eredmény [ '', első paraméter, második paraméter... ]
+function matchPath(path: string, pattern: string): string[] | null {
+  const a = path.split('/');
+  const b = pattern.split('/');
+  if (a.length !== b.length) return null;
+  const params = [''];
+  for (let i = 0; i < b.length; i++) {
+    if (b[i].startsWith(':')) {
+      if (!a[i]) return null;
+      params.push(a[i]);
+    } else if (a[i] !== b[i]) {
+      return null;
+    }
+  }
+  return params;
+}
+
+const noMethod = () => new ApiError(405, 'method_not_allowed', 'Nem engedélyezett metódus.');
+
 async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
   const { req, url, db } = ctx;
   const method = req.method ?? 'GET';
   const path = url.pathname;
+  let m: string[] | null;
 
+  // --- Gyakorlattár
   if (path === '/api/exercises') {
     if (method === 'GET') return { status: 200, body: { exercises: await listExercises(db) } };
     if (method === 'POST') return { status: 201, body: { exercise: await createExercise(db, await readJson(req)) } };
-    throw new ApiError(405, 'method_not_allowed', 'Nem engedélyezett metódus.');
+    throw noMethod();
   }
-
-  const m = path.match(/^\/api\/exercises\/([^/]+)$/);
-  if (m) {
+  if ((m = matchPath(path, '/api/exercises/:id'))) {
     if (method === 'PATCH') {
       return { status: 200, body: { exercise: await updateExercise(db, m[1], await readJson(req)) } };
     }
@@ -93,7 +125,73 @@ async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
       await deleteExercise(db, m[1]);
       return { status: 200, body: { ok: true } };
     }
-    throw new ApiError(405, 'method_not_allowed', 'Nem engedélyezett metódus.');
+    throw noMethod();
+  }
+
+  // --- Tervek és sablonok
+  if (path === '/api/plans') {
+    if (method === 'GET') {
+      return { status: 200, body: { plans: await listPlans(db, url.searchParams.get('template') === '1') } };
+    }
+    if (method === 'POST') return { status: 201, body: await createPlan(db, await readJson(req)) };
+    throw noMethod();
+  }
+  if ((m = matchPath(path, '/api/plans/:id'))) {
+    if (method === 'GET') return { status: 200, body: await getPlan(db, m[1]) };
+    if (method === 'PATCH') return { status: 200, body: { plan: await updatePlan(db, m[1], await readJson(req)) } };
+    if (method === 'DELETE') {
+      await deletePlan(db, m[1]);
+      return { status: 200, body: { ok: true } };
+    }
+    throw noMethod();
+  }
+  if ((m = matchPath(path, '/api/plans/:id/:action')) && PLAN_ACTIONS.includes(m[2])) {
+    if (method !== 'POST') throw noMethod();
+    const body = await readJson(req);
+    switch (m[2]) {
+      case 'copy':
+        return { status: 201, body: await copyPlan(db, m[1], body, false) };
+      case 'save-as-template':
+        return { status: 201, body: await copyPlan(db, m[1], body, true) };
+      case 'from-template':
+        return { status: 201, body: await planFromTemplate(db, m[1], body) };
+      case 'copy-week':
+        return { status: 200, body: await copyWeek(db, m[1], body) };
+      default:
+        return { status: 201, body: await addDay(db, m[1], body) };
+    }
+  }
+
+  // --- Napok és gyakorlat-sorok
+  if ((m = matchPath(path, '/api/days/:id'))) {
+    if (method === 'PATCH') return { status: 200, body: { day: await updateDay(db, m[1], await readJson(req)) } };
+    if (method === 'DELETE') {
+      await deleteDay(db, m[1]);
+      return { status: 200, body: { ok: true } };
+    }
+    throw noMethod();
+  }
+  if ((m = matchPath(path, '/api/days/:id/exercises'))) {
+    if (method !== 'POST') throw noMethod();
+    return { status: 201, body: await addRow(db, m[1], await readJson(req)) };
+  }
+  if ((m = matchPath(path, '/api/days/:id/order'))) {
+    if (method !== 'PUT') throw noMethod();
+    await setOrder(db, m[1], await readJson(req));
+    return { status: 200, body: { ok: true } };
+  }
+  if (path === '/api/groups') {
+    if (method !== 'PUT') throw noMethod();
+    await setGroup(db, await readJson(req));
+    return { status: 200, body: { ok: true } };
+  }
+  if ((m = matchPath(path, '/api/day-exercises/:id'))) {
+    if (method === 'PATCH') return { status: 200, body: await updateRow(db, m[1], await readJson(req)) };
+    if (method === 'DELETE') {
+      await deleteRow(db, m[1]);
+      return { status: 200, body: { ok: true } };
+    }
+    throw noMethod();
   }
 
   throw new ApiError(404, 'not_found', 'Nincs ilyen végpont.');

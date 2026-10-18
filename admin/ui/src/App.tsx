@@ -3,6 +3,8 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, type Status } from './api';
 import Exercises from './pages/Exercises';
 import Placeholder from './pages/Placeholder';
+import PlanEditor from './pages/PlanEditor';
+import Plans from './pages/Plans';
 
 const NAV = [
   { to: '/tervek', label: 'Tervek' },
@@ -46,8 +48,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
+      <header className="border-b border-line bg-white print:hidden">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-8 px-6">
           <span className="text-base font-bold tracking-tight">
             Training<span className="text-teal">Boost</span>
             <span className="ml-2 text-xs font-semibold uppercase tracking-wider text-muted">admin</span>
@@ -70,7 +72,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         {status === 'loading' ? (
           <p className="text-sm text-muted">Betöltés…</p>
         ) : status === 'unreachable' ? (
@@ -79,12 +81,13 @@ export default function App() {
           <SetupNotice problems={status.problems} />
         ) : (
           <Routes>
-            <Route path="/" element={<Navigate to="/gyakorlattar" replace />} />
-            <Route path="/tervek" element={<Placeholder title="Tervek" stage="B" />} />
-            <Route path="/sablonok" element={<Placeholder title="Sablonok" stage="B" />} />
+            <Route path="/" element={<Navigate to="/tervek" replace />} />
+            <Route path="/tervek" element={<Plans key="plans" templates={false} />} />
+            <Route path="/sablonok" element={<Plans key="templates" templates />} />
+            <Route path="/terv/:id" element={<PlanEditor />} />
             <Route path="/gyakorlattar" element={<Exercises />} />
             <Route path="/ugyfelek" element={<Placeholder title="Ügyfelek" stage="C" />} />
-            <Route path="*" element={<Navigate to="/gyakorlattar" replace />} />
+            <Route path="*" element={<Navigate to="/tervek" replace />} />
           </Routes>
         )}
       </main>

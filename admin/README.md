@@ -4,7 +4,7 @@ Csak a saját gépen futó edzésterv-készítő. Nem része a fő buildnek (`np
 
 ## Első indítás
 
-1. Supabase SQL Editor: futtasd le a `supabase/003-admin.sql` fájlt.
+1. Supabase SQL Editor: futtasd le sorban a `supabase/003-admin.sql` és a `supabase/004-admin.sql` fájlt (újrafuttathatók).
 2. Másold az `admin/.env.example` fájlt `admin/.env.local` néven, és töltsd ki:
    - `SUPABASE_URL`: a projekt címe,
    - `SUPABASE_SECRET_KEY`: a "secret key" (Project Settings → API Keys). **Ne** a publishable/anon kulcs.
@@ -17,3 +17,11 @@ A titkos kulcsot kizárólag a helyi szerver (`admin/server/`) olvassa, a böng�
 - `start.ts`: elindítja a helyi API-t (`127.0.0.1:5175`) és a felületet (`127.0.0.1:5174`).
 - `server/`: helyi API (Node beépített modulokkal + a már telepített `@supabase/supabase-js`).
 - `ui/`: React felület (a `/api` hívásokat a Vite továbbítja a helyi szervernek).
+
+## Képernyők
+
+- **Gyakorlattár** (A. szakasz), **Tervek** és **Sablonok** lista, **Terv-szerkesztő** (`/terv/:id`: hét- és nap fülek, gyakorlat-sorok, szuperszett, sorrend, hét másolása, Áttekintő fül). Az Ügyfelek a C. szakaszban készül.
+
+## Ütköző portok
+
+Ha az 5174 vagy az 5175 foglalt, indítás előtt állítsd be: `ADMIN_UI_PORT`, `ADMIN_API_PORT` környezeti változó.
