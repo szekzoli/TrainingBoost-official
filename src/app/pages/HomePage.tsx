@@ -1,6 +1,7 @@
   import { Sparkles, ArrowRight, Instagram, Dumbbell, Target, Activity, Footprints, ArrowUpRight } from 'lucide-react';
   import { Link } from 'react-router-dom';
   import { Reveal } from '../components/Reveal';
+  import { EventPopup } from '../components/EventPopup';
   import heroImage from '../../imports/zoli-hero.webp';
   import morningBoostImage from '../../imports/morning-boost-hero.png';
   import personalTrainingImage from '../../imports/personal-training-hero.jpg';
@@ -9,6 +10,7 @@
   export default function HomePage() {
     return (
       <>
+        <EventPopup />
         <section className="relative overflow-visible border-b border-border bg-gradient-warm">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-mesh opacity-80"></div>
           <div className="pointer-events-none absolute -top-32 -right-24 -z-10 h-96 w-96 rounded-full bg-accent/30 blur-[120px] animate-pulse-glow"></div>

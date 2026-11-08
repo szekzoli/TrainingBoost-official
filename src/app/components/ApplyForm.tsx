@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { applySchema, type ApplyInput } from "../../lib/apply-schema";
 import { toast } from "sonner";
 import { Calendar } from "../../components/ui/calendar";
@@ -13,6 +13,7 @@ interface Props {
   showPhone?: boolean;
   messagePlaceholder?: string;
   showSlotPicker?: boolean;
+  presetDate?: Date;
 }
 
 const SLOT_BY_DAY: Record<number, { label: string; time: string } | undefined> = {
@@ -31,11 +32,16 @@ export function ApplyForm({
   showPhone = true,
   messagePlaceholder = "Mesélj röviden a céljaidról…",
   showSlotPicker = false,
+  presetDate,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [date, setDate] = useState<Date | undefined>();
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    if (presetDate) setDate(presetDate);
+  }, [presetDate]);
 
   const slotString = useMemo(() => {
     if (!date) return "";
