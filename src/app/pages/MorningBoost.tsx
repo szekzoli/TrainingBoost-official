@@ -1,16 +1,22 @@
 import { ArrowRight, Clock, MapPin, Sun, Users, Flame, Zap, Sparkles, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
+import { EventBanner, EVENT_DAY } from '../components/EventPopup';
 import morningBoostImage from '../../imports/morning-boost-page.png';
 
 export default function MorningBoost() {
+  const location = useLocation();
+
   return (
     <>
       <section className="relative overflow-visible border-b border-border bg-gradient-warm">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-mesh opacity-70"></div>
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
+            <Reveal>
+              <EventBanner />
+            </Reveal>
             <Reveal>
               <p className="text-sm font-semibold uppercase tracking-wider text-accent">Csoportos edzés</p>
             </Reveal>
@@ -62,6 +68,8 @@ export default function MorningBoost() {
               <img
                 src={morningBoostImage}
                 alt="Morning Boost csoportos edzés"
+                width={832}
+                height={949}
                 className="rounded-2xl object-cover shadow-[var(--shadow-elegant)]"
               />
             </div>
@@ -246,6 +254,7 @@ export default function MorningBoost() {
             submitLabel="Jelentkezem"
             messagePlaceholder="Pl. korábbi edzéstapasztalat, esetleges sérülések…"
             showSlotPicker={true}
+            presetDate={location.state?.eventPreset ? EVENT_DAY : undefined}
           />
         </Reveal>
 
