@@ -4,7 +4,7 @@ Csak a saját gépen futó edzésterv-készítő. Nem része a fő buildnek (`np
 
 ## Első indítás
 
-1. Supabase SQL Editor: futtasd le sorban a `supabase/003-admin.sql`, a `supabase/004-admin.sql` és a `supabase/005-kovetes.sql` fájlt (újrafuttathatók).
+1. Supabase SQL Editor: futtasd le sorban a `supabase/003-admin.sql`, a `supabase/004-admin.sql` , a `supabase/005-kovetes.sql` és a `supabase/006-ugyfel-reszletek.sql` fájlt (újrafuttathatók).
 2. Másold az `admin/.env.example` fájlt `admin/.env.local` néven, és töltsd ki:
    - `SUPABASE_URL`: a projekt címe,
    - `SUPABASE_SECRET_KEY`: a "secret key" (Project Settings → API Keys). **Ne** a publishable/anon kulcs.
@@ -21,6 +21,7 @@ A titkos kulcsot kizárólag a helyi szerver (`admin/server/`) olvassa, a böng�
 ## Képernyők
 
 - **Áttekintés** (`/attekintes`): esedékes új tervek, nem edző ügyfelek, legutóbbi aktivitás, sablonok; emlékeztetők naptárfájlként (`/api/reminders.ics`).
+- **Ügyfél-oldal** (`/ugyfel/:id`): az ügyfél naplója (sorozatok, jegyzetek, értékelések) és gyakorlatonkénti haladása.
 
 - **Gyakorlattár** (A. szakasz), **Tervek** és **Sablonok** lista, **Terv-szerkesztő** (`/terv/:id`: hét- és nap fülek, gyakorlat-sorok, szuperszett, sorrend, hét másolása, Áttekintő fül). Az Ügyfelek a C. szakaszban készül.
 
