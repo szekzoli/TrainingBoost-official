@@ -68,7 +68,7 @@ export function parsePlanCreate(body: unknown): PlanCreateInput {
     title: reqTitle(b.title),
     slug: reqSlug(b.slug),
     description: optionalText(b.description, 'description', 'A leírás', 2000, true),
-    weeks: intInRange(b.weeks, 'weeks', 'A hetek száma', 1, 12),
+    weeks: intInRange(b.weeks, 'weeks', 'A hetek száma', 1, 52),
     days: intInRange(b.days, 'days', 'A napok száma hetente', 1, 7),
     is_template: optBool(b, 'is_template') === true,
   };
@@ -83,7 +83,7 @@ export function parsePlanCopy(body: unknown): PlanCopyInput {
   return {
     title: reqTitle(b.title),
     slug: reqSlug(b.slug),
-    weeks: optInt(b.weeks, 'weeks', 'A hetek száma', 1, 12),
+    weeks: optInt(b.weeks, 'weeks', 'A hetek száma', 1, 52),
   };
 }
 

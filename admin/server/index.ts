@@ -5,7 +5,7 @@ import { API_PORT, HOST, UI_PORT } from '../ports.ts';
 import { loadConfig, type ConfigResult } from './config.ts';
 import { ApiError, createDb, dbError, unknownError, type SupabaseClient } from './db.ts';
 import { createExercise, deleteExercise, listExercises, updateExercise } from './exercises.ts';
-import { createClient, getClient, listClients, regenerateLink, updateClient } from './clients.ts';
+import { createClient, getClient, listClients, regenerateLink, remindersIcs, updateClient } from './clients.ts';
 import { addDay, addRow, deleteDay, deleteRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
 import {
   copyPlan,
@@ -235,6 +235,20 @@ export function startApi(): Promise<{ server: Server; config: ConfigResult }> {
           message: 'Az admin nincs beállítva.',
           problems: config.ok ? [] : config.problems,
         });
+        return;
+      }
+
+      // Emlékeztetők naptárfájlként (letöltés): nem JSON, ezért külön kezeljük.
+      if (url.pathname === '/api/reminders.ics') {
+        if (req.method !== 'GET') throw noMethod();
+        const ics = await remindersIcs(db);
+        res.writeHead(200, {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="trainingboost-emlekeztetok.ics"',
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+        });
+        res.end(ics);
         return;
       }
 

@@ -7,12 +7,13 @@ export type ExerciseRow = {
   name: string;
   category: string | null;
   video_url: string | null;
+  image_url: string | null;
   technique_note: string | null;
   archived: boolean;
   plan_count: number;
 };
 
-const COLUMNS = 'id, name, category, video_url, technique_note, archived';
+const COLUMNS = 'id, name, category, video_url, image_url, technique_note, archived';
 
 // Kis- és nagybetű különbség nélkül (az adatbázis lower(name) egyedi indexe a végső védelem).
 async function assertNameFree(db: SupabaseClient, name: string, exceptId?: string) {
@@ -38,6 +39,7 @@ export async function createExercise(db: SupabaseClient, body: unknown): Promise
       name: input.name,
       category: input.category ?? null,
       video_url: input.video_url ?? null,
+      image_url: input.image_url ?? null,
       technique_note: input.technique_note ?? null,
     })
     .select(COLUMNS)

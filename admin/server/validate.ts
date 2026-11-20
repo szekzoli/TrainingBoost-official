@@ -43,13 +43,24 @@ export type ExerciseInput = {
   name?: string;
   category?: string | null;
   video_url?: string | null;
+  image_url?: string | null;
   technique_note?: string | null;
   archived?: boolean;
 };
 
-const EXERCISE_FIELDS = new Set(['name', 'category', 'video_url', 'technique_note', 'archived']);
+const EXERCISE_FIELDS = new Set(['name', 'category', 'video_url', 'image_url', 'technique_note', 'archived']);
 
 // partial: szerkesztésnél (PATCH) csak a megadott mezők kerülnek vissza
+/** Kép link: csak https:// webcím (a böngészőben <img>-ként jelenik meg). */
+export function isImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
+
 export function parseExerciseInput(body: unknown, partial: boolean): ExerciseInput {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw new ValidationError('body', 'Érvénytelen kérés.');
@@ -83,6 +94,14 @@ export function parseExerciseInput(body: unknown, partial: boolean): ExerciseInp
       );
     }
     out.video_url = url;
+  }
+
+  if ('image_url' in b) {
+    const url = optionalText(b.image_url, 'image_url', 'A kép linkje', 500);
+    if (url !== null && !isImageUrl(url)) {
+      throw new ValidationError('image_url', 'A kép linkje https:// kezdetű webcím legyen (pl. Google Drive, Imgur vagy a saját oldalad).');
+    }
+    out.image_url = url;
   }
 
   if ('technique_note' in b) {

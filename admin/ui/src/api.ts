@@ -5,6 +5,7 @@ export type Exercise = {
   name: string;
   category: string | null;
   video_url: string | null;
+  image_url: string | null;
   technique_note: string | null;
   archived: boolean;
   plan_count: number;
@@ -14,6 +15,7 @@ export type ExerciseInput = {
   name?: string;
   category?: string | null;
   video_url?: string | null;
+  image_url?: string | null;
   technique_note?: string | null;
   archived?: boolean;
 };
@@ -28,6 +30,7 @@ export type PlanSummary = {
   week_count: number;
   max_days: number;
   client_count: number;
+  based_on_title: string | null;
 };
 
 export type PlanRow = {
@@ -102,6 +105,33 @@ export type ClientRow = {
   created_at: string;
   revoked_at: string | null;
   consent_at: string | null;
+  plan_started_on: string | null;
+  plan_due_on: string | null;
+  coach_note: string | null;
+  plan_weeks: number;
+  days_total: number;
+  days_done: number;
+  last_activity: string | null;
+  last_performed_on: string | null;
+  due_status: 'overdue' | 'soon' | 'ok' | 'none';
+};
+
+export type ClientCreateInput = {
+  label: string;
+  plan_id?: string;
+  template_id?: string;
+  plan_started_on?: string | null;
+  plan_due_on?: string | null;
+  coach_note?: string | null;
+};
+
+export type ClientPatch = {
+  label?: string;
+  plan_id?: string;
+  revoked?: boolean;
+  plan_started_on?: string | null;
+  plan_due_on?: string | null;
+  coach_note?: string | null;
 };
 
 export type Status = { configured: true } | { configured: false; problems: string[] };
@@ -187,10 +217,10 @@ export const api = {
   listClients: () => request<{ clients: ClientRow[] }>('GET', '/api/clients').then((r) => r.clients),
   getClient: (id: string) =>
     request<{ client: ClientRow & { log_count: number } }>('GET', `/api/clients/${id}`).then((r) => r.client),
-  createClient: (input: { label: string; plan_id: string }) =>
-    request<{ client: ClientRow; link: string }>('POST', '/api/clients', input),
+  createClient: (input: ClientCreateInput) =>
+    request<{ client: ClientRow; link: string; created_plan_id: string | null }>('POST', '/api/clients', input),
   regenerateLink: (id: string) => request<{ client: ClientRow; link: string }>('POST', `/api/clients/${id}/new-link`, {}),
-  updateClient: (id: string, input: { label?: string; plan_id?: string; revoked?: boolean }) =>
+  updateClient: (id: string, input: ClientPatch) =>
     request<{ client: ClientRow }>('PATCH', `/api/clients/${id}`, input).then((r) => r.client),
 
   // Napok

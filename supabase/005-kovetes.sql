@@ -28,10 +28,14 @@ update workout_logs
 set performed_on = (completed_at at time zone 'Europe/Budapest')::date
 where performed_on is null and completed_at is not null;
 
--- Meglévő ügyfelek: a kezdés a létrehozás napja
+-- Meglévő ügyfelek: a kezdés a létrehozás napja, az új terv esedékessége kezdés + a terv hetei
 update clients
 set plan_started_on = (created_at at time zone 'Europe/Budapest')::date
 where plan_started_on is null;
+
+update clients c
+set plan_due_on = c.plan_started_on + 7 * (select count(distinct d.week) from plan_days d where d.plan_id = c.plan_id)::int
+where c.plan_due_on is null and c.plan_started_on is not null;
 
 -- ---------------------------------------------------------------------------
 -- 2) Ügyfél-app függvények

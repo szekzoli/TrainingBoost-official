@@ -3,10 +3,12 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, type Status } from './api';
 import Exercises from './pages/Exercises';
 import Clients from './pages/Clients';
+import Dashboard from './pages/Dashboard';
 import PlanEditor from './pages/PlanEditor';
 import Plans from './pages/Plans';
 
 const NAV = [
+  { to: '/attekintes', label: 'Áttekintés' },
   { to: '/tervek', label: 'Tervek' },
   { to: '/sablonok', label: 'Sablonok' },
   { to: '/gyakorlattar', label: 'Gyakorlattár' },
@@ -81,13 +83,14 @@ export default function App() {
           <SetupNotice problems={status.problems} />
         ) : (
           <Routes>
-            <Route path="/" element={<Navigate to="/tervek" replace />} />
+            <Route path="/" element={<Navigate to="/attekintes" replace />} />
+            <Route path="/attekintes" element={<Dashboard />} />
             <Route path="/tervek" element={<Plans key="plans" templates={false} />} />
             <Route path="/sablonok" element={<Plans key="templates" templates />} />
             <Route path="/terv/:id" element={<PlanEditor />} />
             <Route path="/gyakorlattar" element={<Exercises />} />
             <Route path="/ugyfelek" element={<Clients />} />
-            <Route path="*" element={<Navigate to="/tervek" replace />} />
+            <Route path="*" element={<Navigate to="/attekintes" replace />} />
           </Routes>
         )}
       </main>

@@ -22,6 +22,8 @@ function ExerciseForm({
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
   const [videoUrl, setVideoUrl] = useState(initial?.video_url ?? '');
+  const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '');
+  const [imageBroken, setImageBroken] = useState(false);
   const [note, setNote] = useState(initial?.technique_note ?? '');
   const [state, setState] = useState<Saving>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,9 @@ function ExerciseForm({
   const trimmedVideo = videoUrl.trim();
   const video = trimmedVideo ? getVideoInfo(trimmedVideo) : null;
   const videoInvalid = trimmedVideo !== '' && video === null;
-  const canSave = name.trim() !== '' && !videoInvalid && state !== 'saving';
+  const trimmedImage = imageUrl.trim();
+  const imageInvalid = trimmedImage !== '' && !/^https:\/\/[^\s/]+\.[^\s]+$/i.test(trimmedImage);
+  const canSave = name.trim() !== '' && !videoInvalid && !imageInvalid && state !== 'saving';
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +44,7 @@ function ExerciseForm({
       name,
       category: category.trim() || null,
       video_url: trimmedVideo || null,
+      image_url: trimmedImage || null,
       technique_note: note.trim() || null,
     };
     try {
@@ -109,8 +114,45 @@ function ExerciseForm({
           )}
         </div>
 
+        <div>
+          <label className="block text-sm font-semibold">
+            Kép link <span className="font-normal text-muted">(https://…, pl. a saját oldaladról vagy Imgurról)</span>
+            <input
+              className={input}
+              value={imageUrl}
+              maxLength={500}
+              placeholder="https://…/gyakorlat.jpg"
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                setImageBroken(false);
+              }}
+            />
+          </label>
+          {imageInvalid && (
+            <p className="mt-1 text-xs font-semibold text-danger">A kép linkje https:// kezdetű webcím legyen, vagy hagyd üresen.</p>
+          )}
+          {trimmedImage && !imageInvalid && (
+            <div className="mt-2 flex items-center gap-3">
+              {!imageBroken && (
+                <img
+                  src={trimmedImage}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageBroken(true)}
+                  className="h-20 w-28 rounded-[10px] border border-line object-cover"
+                />
+              )}
+              <span className={`text-xs ${imageBroken ? 'font-semibold text-danger' : 'text-muted'}`}>
+                {imageBroken
+                  ? 'A kép nem tölthető be erről a linkről. Közvetlen képlinket adj meg (a link .jpg/.png/.webp képre mutasson).'
+                  : 'Előnézet. Az ügyfél a gyakorlat részleteinél és a kártyán látja.'}
+              </span>
+            </div>
+          )}
+        </div>
+
         <label className="block text-sm font-semibold">
-          Technikai leírás
+          Leírás, technika <span className="font-normal text-muted">(hosszabb szöveg is lehet; a sortörések megmaradnak)</span>
           <textarea
             className={`${input} min-h-32 resize-y`}
             value={note}
@@ -312,7 +354,7 @@ export default function Exercises() {
               <tr>
                 <th className={th}>Név</th>
                 <th className={th}>Kategória</th>
-                <th className={th}>Videó</th>
+                <th className={th}>Média</th>
                 <th className={`${th} text-right`}>Tervekben</th>
                 <th className={th}>
                   <span className="sr-only">Műveletek</span>
@@ -334,15 +376,16 @@ export default function Exercises() {
                   <td className="px-4 py-3">
                     {i.video_url ? (
                       getVideoInfo(i.video_url) ? (
-                        <span className="font-semibold text-teal">van</span>
+                        <span className="font-semibold text-teal">videó</span>
                       ) : (
                         <span className="font-semibold text-danger" title="A mentett link nem ismerhető fel">
                           hibás link
                         </span>
                       )
                     ) : (
-                      '–'
+                      !i.image_url && '–'
                     )}
+                    {i.image_url && <span className="ml-2 font-semibold text-teal">kép</span>}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{i.plan_count}</td>
                   <td className="px-4 py-3">

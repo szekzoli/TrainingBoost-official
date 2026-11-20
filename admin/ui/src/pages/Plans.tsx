@@ -108,14 +108,14 @@ function NewPlanDialog({
         <TitleSlugFields title={f.title} slug={f.slug} onTitle={f.setTitle} onSlug={f.setSlug} slugError={null} />
         <div className="grid grid-cols-2 gap-4">
           <label className="block text-sm font-semibold">
-            Hetek száma (1–12)
+            Hetek száma (1–52)
             <input
               type="number"
               min={1}
-              max={12}
+              max={52}
               className={`${input} mt-1`}
               value={weeks}
-              onChange={(e) => setWeeks(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
+              onChange={(e) => setWeeks(Math.min(52, Math.max(1, Number(e.target.value) || 1)))}
             />
           </label>
           <label className="block text-sm font-semibold">
@@ -204,14 +204,14 @@ function CopyDialog({
         <TitleSlugFields title={f.title} slug={f.slug} onTitle={f.setTitle} onSlug={f.setSlug} slugError={slugError} />
         {canExpand && (
           <label className="block text-sm font-semibold">
-            Hetek száma az új tervben (1–12)
+            Hetek száma az új tervben (1–52)
             <input
               type="number"
               min={1}
-              max={12}
+              max={52}
               className={`${input} mt-1 w-32`}
               value={weeks}
-              onChange={(e) => setWeeks(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
+              onChange={(e) => setWeeks(Math.min(52, Math.max(1, Number(e.target.value) || 1)))}
             />
             <span className="mt-1 block text-xs font-normal text-muted">
               A sablon egyetlen hete minden hétre átmásolódik.
@@ -305,6 +305,9 @@ export default function Plans({ templates }: { templates: boolean }) {
                     <Link to={`/terv/${p.id}`} className="text-navy underline decoration-line underline-offset-4 hover:text-teal">
                       {p.title}
                     </Link>
+                    {p.based_on_title && (
+                      <span className="mt-0.5 block text-xs font-normal text-muted">sablon: {p.based_on_title}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted">{p.slug}</td>
                   <td className="px-4 py-3 text-right tabular-nums">

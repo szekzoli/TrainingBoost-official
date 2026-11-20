@@ -1,10 +1,67 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, errorMessage, type ClientRow, type PlanSummary } from '../api';
+import { DueBadge, ProgressCell, fmtDay, relDays, todayLocal } from '../components/ClientBits';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { btn, btnGhost, btnPrimary, input } from '../lib/util';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('hu-HU');
+
+/** Kezdés + hetek -> javasolt "új terv esedékes" dátum. */
+function suggestDue(start: string, weeks: number): string {
+  if (!start || weeks < 1) return '';
+  const d = new Date(`${start}T12:00:00`);
+  d.setDate(d.getDate() + weeks * 7);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function DateFields({
+  start,
+  due,
+  weeks,
+  onStart,
+  onDue,
+}: {
+  start: string;
+  due: string;
+  weeks: number;
+  onStart: (v: string) => void;
+  onDue: (v: string) => void;
+}) {
+  const auto = suggestDue(start, weeks);
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <label className="block text-sm font-semibold">
+        Kezdés
+        <input type="date" className={`${input} mt-1`} value={start} onChange={(e) => onStart(e.target.value)} />
+      </label>
+      <label className="block text-sm font-semibold">
+        Új terv esedékes
+        <input type="date" className={`${input} mt-1`} value={due} onChange={(e) => onDue(e.target.value)} />
+        <span className="mt-1 block text-xs font-normal text-muted">
+          {due === '' && auto ? `Üresen: automatikusan ${fmtDay(auto)} (${weeks} hét)` : 'Ekkor emlékeztet az áttekintő és a naptár.'}
+        </span>
+      </label>
+    </div>
+  );
+}
+
+function NoteField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block text-sm font-semibold">
+      Belső jegyzet <span className="font-normal text-muted">(az ügyfél nem látja)</span>
+      <textarea
+        className={`${input} mt-1`}
+        rows={2}
+        maxLength={2000}
+        value={value}
+        placeholder="Pl. cél, sérülés, kedvelt gyakorlatok…"
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
+  );
+}
 
 // "V-0001" jellegű következő sorszám a meglévő azonosítók alapján
 function suggestLabel(clients: ClientRow[]): string {
@@ -35,13 +92,25 @@ function NameWarning({ value }: { value: string }) {
   );
 }
 
-function PlanSelect({ plans, value, onChange }: { plans: PlanSummary[]; value: string; onChange: (id: string) => void }) {
+function PlanSelect({
+  plans,
+  value,
+  onChange,
+  placeholder = '– válassz tervet –',
+}: {
+  plans: PlanSummary[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+}) {
   return (
     <select className={`${input} mt-1`} value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">– válassz tervet –</option>
+      <option value="">{placeholder}</option>
       {plans.map((p) => (
         <option key={p.id} value={p.id}>
-          {p.title} ({p.slug})
+          {p.title}
+          {p.week_count ? ` · ${p.week_count} hét` : ''}
+          {p.client_count ? ` · ${p.client_count} ügyfél` : ''}
         </option>
       ))}
     </select>
@@ -60,19 +129,29 @@ function FormError({ message }: { message: string | null }) {
 function NewClientDialog({
   clients,
   plans,
+  templates,
   onClose,
   onCreated,
 }: {
   clients: ClientRow[];
   plans: PlanSummary[];
+  templates: PlanSummary[];
   onClose: () => void;
-  onCreated: (client: ClientRow, link: string) => void;
+  onCreated: (client: ClientRow, link: string, openPlanId: string | null) => void;
 }) {
   const [label, setLabel] = useState(() => suggestLabel(clients));
+  const [source, setSource] = useState<'template' | 'plan'>(templates.length > 0 ? 'template' : 'plan');
   const [planId, setPlanId] = useState('');
+  const [templateId, setTemplateId] = useState('');
+  const [editAfter, setEditAfter] = useState(true);
+  const [start, setStart] = useState(todayLocal());
+  const [due, setDue] = useState('');
+  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const valid = label.trim() !== '' && planId !== '' && !busy;
+  const chosenId = source === 'template' ? templateId : planId;
+  const weeks = [...plans, ...templates].find((p) => p.id === chosenId)?.week_count ?? 0;
+  const valid = label.trim() !== '' && chosenId !== '' && start !== '' && !busy;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,27 +159,65 @@ function NewClientDialog({
     setBusy(true);
     setError(null);
     try {
-      const r = await api.createClient({ label, plan_id: planId });
-      onCreated(r.client, r.link);
+      const r = await api.createClient({
+        label,
+        ...(source === 'template' ? { template_id: templateId } : { plan_id: planId }),
+        plan_started_on: start,
+        plan_due_on: due || null,
+        coach_note: note.trim() || null,
+      });
+      onCreated(r.client, r.link, source === 'template' && editAfter ? r.created_plan_id : null);
     } catch (err) {
       setBusy(false);
       setError(errorMessage(err));
     }
   }
 
+  const tab = (active: boolean) =>
+    `flex-1 rounded-[10px] border px-3 py-2 text-left text-sm ${active ? 'border-teal bg-teal-soft' : 'border-line hover:bg-canvas'}`;
+
   return (
-    <Modal title="Új ügyfél" onClose={onClose}>
+    <Modal title="Új ügyfél" onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-4">
         <label className="block text-sm font-semibold">
           Azonosító (belső jelölés) <span className="text-danger">*</span>
           <input className={`${input} mt-1`} value={label} maxLength={40} autoFocus onChange={(e) => setLabel(e.target.value)} />
         </label>
         <NameWarning value={label} />
-        <label className="block text-sm font-semibold">
-          Terv <span className="text-danger">*</span>
-          <PlanSelect plans={plans} value={planId} onChange={setPlanId} />
-        </label>
-        {plans.length === 0 && <p className="text-xs text-muted">Még nincs terv. Előbb hozz létre egyet a Tervek fülön.</p>}
+
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-semibold">
+            Edzésterv <span className="text-danger">*</span>
+          </legend>
+          <div className="flex gap-2">
+            <button type="button" className={tab(source === 'template')} onClick={() => setSource('template')}>
+              <span className="block font-semibold">Sablonból</span>
+              <span className="block text-xs text-muted">Saját másolat készül, utána szabadon szerkeszthető.</span>
+            </button>
+            <button type="button" className={tab(source === 'plan')} onClick={() => setSource('plan')}>
+              <span className="block font-semibold">Meglévő terv</span>
+              <span className="block text-xs text-muted">Egyéni terv, vagy közös terv több ügyfélnek.</span>
+            </button>
+          </div>
+          {source === 'template' ? (
+            <>
+              <PlanSelect plans={templates} value={templateId} onChange={setTemplateId} placeholder="– válassz sablont –" />
+              {templates.length === 0 && <p className="text-xs text-muted">Még nincs sablon. A Sablonok fülön hozhatsz létre.</p>}
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={editAfter} onChange={(e) => setEditAfter(e.target.checked)} />
+                Létrehozás után megnyitom a tervet, hogy az ügyfélre szabjam
+              </label>
+            </>
+          ) : (
+            <>
+              <PlanSelect plans={plans} value={planId} onChange={setPlanId} />
+              {plans.length === 0 && <p className="text-xs text-muted">Még nincs terv. Előbb hozz létre egyet a Tervek fülön.</p>}
+            </>
+          )}
+        </fieldset>
+
+        <DateFields start={start} due={due} weeks={weeks} onStart={setStart} onDue={setDue} />
+        <NoteField value={note} onChange={setNote} />
         <FormError message={error} />
         <div className="flex justify-end gap-3 border-t border-line pt-4">
           <button type="button" className={btnGhost} onClick={onClose}>
@@ -184,6 +301,9 @@ function EditClientDialog({
 }) {
   const [label, setLabel] = useState(client.label);
   const [planId, setPlanId] = useState(client.plan_id);
+  const [start, setStart] = useState(client.plan_started_on ?? '');
+  const [due, setDue] = useState(client.plan_due_on ?? '');
+  const [note, setNote] = useState(client.coach_note ?? '');
   const [logCount, setLogCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +321,10 @@ function EditClientDialog({
     : [{ id: client.plan_id, title: client.plan_title, slug: client.plan_slug } as PlanSummary, ...plans];
 
   const planChanged = planId !== client.plan_id;
-  const dirty = planChanged || label.trim() !== client.label;
+  const datesChanged =
+    start !== (client.plan_started_on ?? '') || due !== (client.plan_due_on ?? '') || note.trim() !== (client.coach_note ?? '');
+  const dirty = planChanged || datesChanged || label.trim() !== client.label;
+  const weeks = plans.find((p) => p.id === planId)?.week_count ?? client.plan_weeks;
   const valid = label.trim() !== '' && planId !== '' && dirty && !busy;
 
   async function submit(e: React.FormEvent) {
@@ -209,9 +332,12 @@ function EditClientDialog({
     if (!valid) return;
     setBusy(true);
     setError(null);
-    const patch: { label?: string; plan_id?: string } = {};
+    const patch: Parameters<typeof api.updateClient>[1] = {};
     if (label.trim() !== client.label) patch.label = label;
     if (planChanged) patch.plan_id = planId;
+    if (start !== (client.plan_started_on ?? '')) patch.plan_started_on = start || null;
+    if (due !== (client.plan_due_on ?? '')) patch.plan_due_on = due || null;
+    if (note.trim() !== (client.coach_note ?? '')) patch.coach_note = note.trim() || null;
     try {
       await api.updateClient(client.id, patch);
       await onSaved();
@@ -222,7 +348,7 @@ function EditClientDialog({
   }
 
   return (
-    <Modal title="Ügyfél szerkesztése" onClose={onClose}>
+    <Modal title="Ügyfél szerkesztése" onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-4">
         <label className="block text-sm font-semibold">
           Azonosító
@@ -247,6 +373,8 @@ function EditClientDialog({
             )}
           </p>
         )}
+        <DateFields start={start} due={due} weeks={weeks} onStart={setStart} onDue={setDue} />
+        <NoteField value={note} onChange={setNote} />
         <FormError message={error} />
         <div className="flex justify-end gap-3 border-t border-line pt-4">
           <button type="button" className={btnGhost} onClick={onClose}>
@@ -262,8 +390,13 @@ function EditClientDialog({
 }
 
 export default function Clients() {
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const filter = params.get('szuro') === 'esedekes' ? 'due' : 'all';
   const [clients, setClients] = useState<ClientRow[] | null>(null);
   const [plans, setPlans] = useState<PlanSummary[]>([]);
+  const [templates, setTemplates] = useState<PlanSummary[]>([]);
+  const [openPlanAfter, setOpenPlanAfter] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ label: string; link: string } | null>(null);
@@ -276,9 +409,10 @@ export default function Clients() {
   const load = useCallback(async () => {
     setLoadError(null);
     try {
-      const [c, p] = await Promise.all([api.listClients(), api.listPlans(false)]);
+      const [c, p, t] = await Promise.all([api.listClients(), api.listPlans(false), api.listPlans(true)]);
       setClients(c);
       setPlans(p);
+      setTemplates(t);
     } catch (err) {
       setLoadError(errorMessage(err));
     }
@@ -295,9 +429,15 @@ export default function Clients() {
   }, [notice]);
 
   const visible = useMemo(
-    () => (clients ?? []).filter((c) => showRevoked || c.revoked_at === null),
-    [clients, showRevoked],
+    () =>
+      (clients ?? []).filter(
+        (c) =>
+          (showRevoked || c.revoked_at === null) &&
+          (filter === 'all' || c.due_status === 'overdue' || c.due_status === 'soon'),
+      ),
+    [clients, showRevoked, filter],
   );
+  const dueCount = (clients ?? []).filter((c) => c.due_status === 'overdue' || c.due_status === 'soon').length;
 
   async function restore(c: ClientRow) {
     setNotice({ kind: 'ok', text: 'Mentés…' });
@@ -316,12 +456,36 @@ export default function Clients() {
     <div>
       <div className="flex flex-wrap items-center gap-4">
         <h1 className="mr-auto text-2xl font-bold">Ügyfelek</h1>
+        <a
+          href="/api/reminders.ics"
+          download
+          className={`${btnGhost} inline-flex items-center`}
+          title="Az aktív ügyfelek új-terv dátumai naptárfájlként (Google Naptár, Outlook, Apple Naptár)"
+        >
+          Emlékeztetők naptárba (.ics)
+        </a>
         <button type="button" className={btnPrimary} onClick={() => setCreating(true)} disabled={clients === null}>
           Új ügyfél
         </button>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-4">
+        <div className="flex rounded-[10px] border border-line bg-white p-0.5 text-sm" role="group" aria-label="Szűrés">
+          <button
+            type="button"
+            className={`rounded-[8px] px-3 py-1 font-semibold ${filter === 'all' ? 'bg-navy text-white' : 'text-muted'}`}
+            onClick={() => setParams({})}
+          >
+            Mind
+          </button>
+          <button
+            type="button"
+            className={`rounded-[8px] px-3 py-1 font-semibold ${filter === 'due' ? 'bg-navy text-white' : 'text-muted'}`}
+            onClick={() => setParams({ szuro: 'esedekes' })}
+          >
+            Új terv kell{dueCount > 0 ? ` (${dueCount})` : ''}
+          </button>
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showRevoked} onChange={(e) => setShowRevoked(e.target.checked)} />
           Visszavontak is
@@ -351,7 +515,9 @@ export default function Clients() {
               <tr>
                 <th className={th}>Azonosító</th>
                 <th className={th}>Terv</th>
-                <th className={th}>Létrehozva</th>
+                <th className={th}>Haladás</th>
+                <th className={th}>Utolsó edzés</th>
+                <th className={th}>Új terv</th>
                 <th className={th}>Állapot</th>
                 <th className={th}>
                   <span className="sr-only">Műveletek</span>
@@ -361,9 +527,31 @@ export default function Clients() {
             <tbody>
               {visible.map((c) => (
                 <tr key={c.id} className={`border-b border-line last:border-b-0 ${c.revoked_at ? 'bg-canvas text-muted' : ''}`}>
-                  <td className="px-4 py-3 font-semibold">{c.label}</td>
-                  <td className="px-4 py-3">{c.plan_title}</td>
-                  <td className="px-4 py-3 tabular-nums">{fmtDate(c.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-semibold">{c.label}</span>
+                    {c.coach_note && (
+                      <span className="mt-0.5 block max-w-48 truncate text-xs text-muted" title={c.coach_note}>
+                        {c.coach_note}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link to={`/terv/${c.plan_id}`} className="hover:text-teal hover:underline">
+                      {c.plan_title}
+                    </Link>
+                    <span className="block text-xs text-muted">
+                      {c.plan_weeks} hét · kezdés: {fmtDay(c.plan_started_on ?? c.created_at)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <ProgressCell client={c} />
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {relDays(c.last_performed_on ?? c.last_activity)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <DueBadge client={c} />
+                  </td>
                   <td className="px-4 py-3">
                     {c.revoked_at ? (
                       <span className="rounded-full border border-danger/40 px-2 py-0.5 text-xs font-semibold text-danger">
@@ -408,14 +596,29 @@ export default function Clients() {
           clients={clients}
           plans={plans}
           onClose={() => setCreating(false)}
-          onCreated={(client, link) => {
+          templates={templates}
+          onCreated={(client, link, openPlanId) => {
             setCreating(false);
             setCreated({ label: client.label, link });
+            setOpenPlanAfter(openPlanId);
             void load();
           }}
         />
       )}
-      {created && <LinkDialog label={created.label} link={created.link} onClose={() => setCreated(null)} />}
+      {created && (
+        <LinkDialog
+          label={created.label}
+          link={created.link}
+          onClose={() => {
+            setCreated(null);
+            if (openPlanAfter) {
+              const id = openPlanAfter;
+              setOpenPlanAfter(null);
+              navigate(`/terv/${id}`);
+            }
+          }}
+        />
+      )}
       {editing && clients && (
         <EditClientDialog
           client={editing}
