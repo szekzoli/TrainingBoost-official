@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiFailure, type Exercise } from '../api';
 import Modal from '../components/Modal';
 import { getVideoInfo } from '../../../../src/lib/video';
+import { CATEGORIES, EQUIPMENT, MUSCLES, TYPES, typeOf, withCurrent } from '../lib/taxonomy';
 
 // Ékezet- és kisbetű-független összehasonlítás a kereséshez
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
@@ -21,6 +22,8 @@ function ExerciseForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
+  const [equipment, setEquipment] = useState(initial?.equipment ?? '');
+  const [muscle, setMuscle] = useState(initial?.muscle_group ?? '');
   const [videoUrl, setVideoUrl] = useState(initial?.video_url ?? '');
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '');
   const [imageBroken, setImageBroken] = useState(false);
@@ -43,6 +46,8 @@ function ExerciseForm({
     const payload = {
       name,
       category: category.trim() || null,
+      equipment: equipment || null,
+      muscle_group: muscle || null,
       video_url: trimmedVideo || null,
       image_url: trimmedImage || null,
       technique_note: note.trim() || null,
@@ -74,21 +79,42 @@ function ExerciseForm({
           />
         </label>
 
-        <label className="block text-sm font-semibold">
-          Kategória <span className="font-normal text-muted">(pl. alsótest, core)</span>
-          <input
-            className={input}
-            value={category}
-            maxLength={40}
-            list="exercise-categories"
-            onChange={(e) => setCategory(e.target.value)}
-          />
-          <datalist id="exercise-categories">
-            {categories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </label>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block text-sm font-semibold">
+            Mozgásminta
+            <select className={input} value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">–</option>
+              {withCurrent([...CATEGORIES, ...categories.filter((c) => !CATEGORIES.includes(c))], category).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-semibold">
+            Fő izomcsoport
+            <select className={input} value={muscle} onChange={(e) => setMuscle(e.target.value)}>
+              <option value="">–</option>
+              {withCurrent(MUSCLES, muscle).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-semibold">
+            Eszköz
+            <select className={input} value={equipment} onChange={(e) => setEquipment(e.target.value)}>
+              <option value="">–</option>
+              {withCurrent(EQUIPMENT, equipment).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            {equipment && <span className="mt-1 block text-xs font-normal text-muted">{typeOf(equipment)}</span>}
+          </label>
+        </div>
 
         <div>
           <label className="block text-sm font-semibold">
@@ -249,6 +275,10 @@ export default function Exercises() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [fCat, setFCat] = useState('');
+  const [fMuscle, setFMuscle] = useState('');
+  const [fType, setFType] = useState('');
+  const [fEquip, setFEquip] = useState('');
   const [editing, setEditing] = useState<Exercise | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Exercise | null>(null);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -281,9 +311,14 @@ export default function Exercises() {
     const q = fold(query.trim());
     return (items ?? [])
       .filter((i) => showArchived || !i.archived)
-      .filter((i) => !q || fold(i.name).includes(q) || fold(i.category ?? '').includes(q))
+      .filter((i) => !q || fold(i.name).includes(q) || fold(i.category ?? '').includes(q) || fold(i.muscle_group ?? '').includes(q))
+      .filter((i) => !fCat || (fCat === '-' ? !i.category : i.category === fCat))
+      .filter((i) => !fMuscle || (fMuscle === '-' ? !i.muscle_group : i.muscle_group === fMuscle))
+      .filter((i) => !fType || typeOf(i.equipment) === fType)
+      .filter((i) => !fEquip || i.equipment === fEquip)
       .sort((a, b) => a.name.localeCompare(b.name, 'hu'));
-  }, [items, query, showArchived]);
+  }, [items, query, showArchived, fCat, fMuscle, fType, fEquip]);
+  const filtering = !!(fCat || fMuscle || fType || fEquip);
 
   const archivedCount = (items ?? []).filter((i) => i.archived).length;
 
@@ -332,7 +367,49 @@ export default function Exercises() {
         </span>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-[14px] border border-line bg-white">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        {(
+          [
+            ['Mozgásminta', fCat, setFCat, CATEGORIES],
+            ['Izomcsoport', fMuscle, setFMuscle, MUSCLES],
+            ['Típus', fType, setFType, [...TYPES]],
+            ['Eszköz', fEquip, setFEquip, EQUIPMENT],
+          ] as [string, string, (v: string) => void, string[]][]
+        ).map(([label, value, set, list]) => (
+          <select
+            key={label}
+            aria-label={label}
+            value={value}
+            onChange={(e) => set(e.target.value)}
+            className={`h-9 rounded-[10px] border bg-white px-2 text-sm ${value ? 'border-teal font-semibold text-teal' : 'border-line'}`}
+          >
+            <option value="">{label}: mind</option>
+            {list.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+            {label !== 'Típus' && label !== 'Eszköz' && <option value="-">(nincs megadva)</option>}
+          </select>
+        ))}
+        {filtering && (
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              setFCat('');
+              setFMuscle('');
+              setFType('');
+              setFEquip('');
+            }}
+          >
+            Szűrők törlése
+          </button>
+        )}
+        <span className="ml-auto text-xs text-muted">{visible.length} gyakorlat</span>
+      </div>
+
+      <div className="mt-3 overflow-hidden rounded-[14px] border border-line bg-white">
         {loadError ? (
           <div className="p-6 text-sm">
             <p role="alert" className="text-danger">
@@ -353,7 +430,9 @@ export default function Exercises() {
             <thead className="border-b border-line">
               <tr>
                 <th className={th}>Név</th>
-                <th className={th}>Kategória</th>
+                <th className={th}>Mozgásminta</th>
+                <th className={th}>Izomcsoport</th>
+                <th className={th}>Eszköz</th>
                 <th className={th}>Média</th>
                 <th className={`${th} text-right`}>Tervekben</th>
                 <th className={th}>
@@ -373,6 +452,11 @@ export default function Exercises() {
                     )}
                   </td>
                   <td className="px-4 py-3">{i.category ?? '–'}</td>
+                  <td className="px-4 py-3">{i.muscle_group ?? '–'}</td>
+                  <td className="px-4 py-3">
+                    {i.equipment ?? '–'}
+                    {i.equipment && <span className="block text-xs text-muted">{typeOf(i.equipment)}</span>}
+                  </td>
                   <td className="px-4 py-3">
                     {i.video_url ? (
                       getVideoInfo(i.video_url) ? (

@@ -43,7 +43,13 @@ const ExercisePicker = forwardRef<
     const visible = all.filter((e) => !e.archived);
     const list = folded
       ? visible
-          .filter((e) => fold(e.name).includes(folded) || fold(e.category ?? '').includes(folded))
+          .filter(
+            (e) =>
+              fold(e.name).includes(folded) ||
+              fold(e.category ?? '').includes(folded) ||
+              fold(e.muscle_group ?? '').includes(folded) ||
+              fold(e.equipment ?? '').includes(folded),
+          )
           .sort((a, b) => {
             const as = fold(a.name).startsWith(folded) ? 0 : 1;
             const bs = fold(b.name).startsWith(folded) ? 0 : 1;
@@ -146,7 +152,9 @@ const ExercisePicker = forwardRef<
               }`}
             >
               <span className="font-semibold">{m.name}</span>
-              {m.category && <span className="text-xs text-muted">{m.category}</span>}
+              {(m.category || m.equipment) && (
+                <span className="text-xs text-muted">{[m.category, m.muscle_group, m.equipment].filter(Boolean).join(' · ')}</span>
+              )}
             </li>
           ))}
           {matches.length === 0 && !canCreate && <li className="px-3 py-2 text-sm text-muted">Nincs találat.</li>}

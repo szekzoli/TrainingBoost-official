@@ -6,6 +6,7 @@ import {
   parseDayUpdate,
   parseGroup,
   parseOrder,
+  parseReplace,
   parseRowAdd,
   parseRowUpdate,
 } from './validate-plans.ts';
@@ -74,4 +75,15 @@ export async function setOrder(db: SupabaseClient, dayId: unknown, body: unknown
 export async function setGroup(db: SupabaseClient, body: unknown): Promise<void> {
   const i = parseGroup(body);
   await callRpc<void>(db, 'admin_set_group', { p_ids: i.ids, p_label: i.label });
+}
+
+// Gyakorlat cseréje egy sorban (és a hatókör szerinti többi héten). A naplózott heteket kihagyja.
+export async function replaceRow(db: SupabaseClient, rowId: unknown, body: unknown) {
+  const id = assertUuid(rowId);
+  const i = parseReplace(body);
+  return callRpc<{ replaced: number; logged_weeks: number[]; unmatched_weeks: number[] }>(db, 'admin_replace_exercise', {
+    p_id: id,
+    p_exercise: i.exercise_id,
+    p_scope: i.scope,
+  });
 }

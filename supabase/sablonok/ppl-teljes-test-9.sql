@@ -1,5 +1,6 @@
 -- Sablon: Push / Pull / Láb / Teljes test, heti 4 nap, 13 hét (a 9.0-s edzésterv alapján)
--- Futtatás: Supabase SQL Editor -> New query -> beillesztés -> Run. Előfeltétel: 005-kovetes.sql lefutott.
+-- Futtatás: Supabase SQL Editor -> New query -> beillesztés -> Run. Előfeltétel: 005-kovetes.sql lefutott
+-- (ha a gyakorlattar.sql-t is használod, azt futtasd előbb, így a gyakorlatok eszközt és izomcsoportot is kapnak).
 -- Újrafuttatható: ha a sablon (slug: ppl-teljes-test-9) már létezik, nem csinál semmit.
 -- Utána az adminban: Ügyfelek -> Új ügyfél -> Sablonból -> ez a sablon. Az ügyfél saját másolatot kap,
 -- amit tovább szerkeszthetsz. A hetek egyformák: a súlyokat az ügyfél naplózza, te hetente módosíthatod
@@ -7,30 +8,30 @@
 
 -- 1) Gyakorlatok a gyakorlattárba (ami már megvan ugyanazzal a névvel, azt nem bántja)
 insert into exercises (name, category) values
-  ('Fekvenyomás ferde padon Smith keretben', 'felsőtest – toló'),
-  ('Military press rúddal állva', 'felsőtest – toló'),
-  ('Váll oldalemelés kézisúlyzóval', 'felsőtest – toló'),
-  ('Deficit pushup', 'felsőtest – toló'),
-  ('Tricepsz tolás fej felett kötéllel csigás gépen', 'felsőtest – toló'),
-  ('Haskerék', 'core'),
-  ('Húzódzkodás', 'felsőtest – húzó'),
-  ('Egykezes evezés kézisúlyzóval padon', 'felsőtest – húzó'),
-  ('Állig húzás francia rúddal', 'felsőtest – húzó'),
-  ('Bicepsz Scott-gépen', 'felsőtest – húzó'),
-  ('Kalapács bicepsz kötéllel csigás gépen', 'felsőtest – húzó'),
-  ('Face pull kötéllel csigás gépen', 'felsőtest – húzó'),
-  ('Cable chop (rotáció kábeles gépen)', 'core'),
-  ('Lábtoló gép', 'alsótest – térd domináns'),
-  ('Bolgár guggolás kézisúlyzóval', 'alsótest – térd domináns'),
-  ('Egylábas RDL kézisúlyzóval / kettlebell', 'alsótest – csípő domináns'),
-  ('Hip thrust gépen', 'alsótest – csípő domináns'),
-  ('Combhajlító gép', 'alsótest – csípő domináns'),
-  ('Thruster kézisúlyzóval', 'teljes test'),
-  ('Dobozra lépés kézisúlyzóval', 'alsótest – térd domináns'),
-  ('Tolódzkodás súllyal', 'felsőtest – toló'),
-  ('Suitcase carry (egykezes cipelés)', 'core'),
-  ('Inverz evezés rúdon', 'felsőtest – húzó'),
-  ('Fitball plank kigördülés', 'core')
+  ('Fekvenyomás ferde padon Smith keretben', 'Felsőtest – toló'),
+  ('Military press rúddal állva', 'Felsőtest – toló'),
+  ('Váll oldalemelés kézisúlyzóval', 'Felsőtest – toló'),
+  ('Deficit pushup', 'Felsőtest – toló'),
+  ('Tricepsz tolás fej felett kötéllel csigás gépen', 'Felsőtest – toló'),
+  ('Haskerék', 'Core'),
+  ('Húzódzkodás', 'Felsőtest – húzó'),
+  ('Egykezes evezés kézisúlyzóval padon', 'Felsőtest – húzó'),
+  ('Állig húzás francia rúddal', 'Felsőtest – húzó'),
+  ('Bicepsz Scott-gépen', 'Felsőtest – húzó'),
+  ('Kalapács bicepsz kötéllel csigás gépen', 'Felsőtest – húzó'),
+  ('Face pull kötéllel csigás gépen', 'Felsőtest – húzó'),
+  ('Cable chop (rotáció kábeles gépen)', 'Core'),
+  ('Lábtoló gép', 'Alsótest – térd domináns'),
+  ('Bolgár guggolás kézisúlyzóval', 'Alsótest – térd domináns'),
+  ('Egylábas RDL kézisúlyzóval / kettlebell', 'Alsótest – csípő domináns'),
+  ('Hip thrust gépen', 'Alsótest – csípő domináns'),
+  ('Combhajlító gép', 'Alsótest – csípő domináns'),
+  ('Thruster kézisúlyzóval', 'Kondi / intenzív'),
+  ('Dobozra lépés kézisúlyzóval', 'Alsótest – térd domináns'),
+  ('Tolódzkodás súllyal', 'Felsőtest – toló'),
+  ('Suitcase carry (egykezes cipelés)', 'Core'),
+  ('Inverz evezés rúdon', 'Felsőtest – húzó'),
+  ('Fitball plank kigördülés', 'Core')
 on conflict ((lower(name))) do nothing;
 
 -- 2) A sablon, 13 hét × 4 nap, minden héten ugyanazokkal a gyakorlatokkal

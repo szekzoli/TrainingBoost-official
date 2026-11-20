@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { api, type PlanDay, type PlanRow, type RowPatch } from '../api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExercisePicker, { type PickerHandle } from '../components/ExercisePicker';
+import SwapDialog from '../components/SwapDialog';
 import {
   canGroup,
   computeMove,
@@ -83,6 +84,7 @@ export default function DayEditor({ day, ctl, weekCount }: { day: PlanDay; ctl: 
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<PlanRow | null>(null);
+  const [swapping, setSwapping] = useState<PlanRow | null>(null);
   const [addSection, setAddSection] = useState('');
   const picker = useRef<PickerHandle>(null);
   const dayId = day.id;
@@ -342,6 +344,15 @@ export default function DayEditor({ day, ctl, weekCount }: { day: PlanDay; ctl: 
                             </button>
                             <button
                               type="button"
+                              aria-label={`Csere: ${r.exercise.name}`}
+                              title="Gyakorlat cseréje"
+                              className={iconBtn}
+                              onClick={() => setSwapping(r)}
+                            >
+                              <ArrowLeftRight className="size-4" />
+                            </button>
+                            <button
+                              type="button"
                               aria-label={`Törlés: ${r.exercise.name}`}
                               className={`${iconBtn} text-danger`}
                               onClick={() => setDeleting(r)}
@@ -384,6 +395,21 @@ export default function DayEditor({ day, ctl, weekCount }: { day: PlanDay; ctl: 
           {weekCount > 1 && ' A sorozat, ismétlés, ellenállás, szünet és megjegyzés módosítása a fent kiválasztott hatókör szerint más hetekre is érvényes.'}
         </p>
       </div>
+
+      {swapping && (
+        <SwapDialog
+          row={swapping}
+          week={day.week}
+          weekCount={weekCount}
+          defaultScope={ctl.scope}
+          onClose={() => setSwapping(null)}
+          onDone={async (message) => {
+            setSwapping(null);
+            await ctl.reload();
+            ctl.notify({ kind: 'ok', text: message });
+          }}
+        />
+      )}
 
       {deleting && (
         <ConfirmDialog

@@ -6,7 +6,7 @@ import { loadConfig, type ConfigResult } from './config.ts';
 import { ApiError, createDb, dbError, unknownError, type SupabaseClient } from './db.ts';
 import { createExercise, deleteExercise, listExercises, updateExercise } from './exercises.ts';
 import { createClient, getClient, getClientDetail, listClients, regenerateLink, remindersIcs, updateClient } from './clients.ts';
-import { addDay, addRow, deleteDay, deleteRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
+import { addDay, addRow, deleteDay, deleteRow, replaceRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
 import {
   copyPlan,
   copyWeek,
@@ -207,6 +207,10 @@ async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
     if (method !== 'PUT') throw noMethod();
     await setGroup(db, await readJson(req));
     return { status: 200, body: { ok: true } };
+  }
+  if ((m = matchPath(path, '/api/day-exercises/:id/replace'))) {
+    if (method !== 'POST') throw noMethod();
+    return { status: 200, body: await replaceRow(db, m[1], await readJson(req)) };
   }
   if ((m = matchPath(path, '/api/day-exercises/:id'))) {
     if (method === 'PATCH') return { status: 200, body: await updateRow(db, m[1], await readJson(req)) };

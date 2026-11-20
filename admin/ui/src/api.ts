@@ -4,6 +4,8 @@ export type Exercise = {
   id: string;
   name: string;
   category: string | null;
+  equipment: string | null;
+  muscle_group: string | null;
   video_url: string | null;
   image_url: string | null;
   technique_note: string | null;
@@ -14,6 +16,8 @@ export type Exercise = {
 export type ExerciseInput = {
   name?: string;
   category?: string | null;
+  equipment?: string | null;
+  muscle_group?: string | null;
   video_url?: string | null;
   image_url?: string | null;
   technique_note?: string | null;
@@ -262,6 +266,12 @@ export const api = {
       'PATCH',
       `/api/day-exercises/${rowId}`,
       { ...patch, scope },
+    ),
+  replaceRow: (rowId: string, exerciseId: string, scope: Scope) =>
+    request<{ replaced: number; logged_weeks: number[]; unmatched_weeks: number[] }>(
+      'POST',
+      `/api/day-exercises/${rowId}/replace`,
+      { exercise_id: exerciseId, scope },
     ),
   deleteRow: (rowId: string) => request<{ ok: true }>('DELETE', `/api/day-exercises/${rowId}`),
   setOrder: (dayId: string, ids: string[]) => request<{ ok: true }>('PUT', `/api/days/${dayId}/order`, { ids }),

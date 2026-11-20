@@ -44,11 +44,13 @@ export type ExerciseInput = {
   category?: string | null;
   video_url?: string | null;
   image_url?: string | null;
+  equipment?: string | null;
+  muscle_group?: string | null;
   technique_note?: string | null;
   archived?: boolean;
 };
 
-const EXERCISE_FIELDS = new Set(['name', 'category', 'video_url', 'image_url', 'technique_note', 'archived']);
+const EXERCISE_FIELDS = new Set(['name', 'category', 'equipment', 'muscle_group', 'video_url', 'image_url', 'technique_note', 'archived']);
 
 // partial: szerkesztésnél (PATCH) csak a megadott mezők kerülnek vissza
 /** Kép link: csak https:// webcím (a böngészőben <img>-ként jelenik meg). */
@@ -95,6 +97,9 @@ export function parseExerciseInput(body: unknown, partial: boolean): ExerciseInp
     }
     out.video_url = url;
   }
+
+  if ('equipment' in b) out.equipment = optionalText(b.equipment, 'equipment', 'Az eszköz', 40);
+  if ('muscle_group' in b) out.muscle_group = optionalText(b.muscle_group, 'muscle_group', 'Az izomcsoport', 40);
 
   if ('image_url' in b) {
     const url = optionalText(b.image_url, 'image_url', 'A kép linkje', 500);

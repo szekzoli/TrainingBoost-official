@@ -161,6 +161,13 @@ export const SCOPES = ['this', 'from', 'all'] as const;
 export type Scope = (typeof SCOPES)[number];
 
 // A `fields` csak a ténylegesen megadott mezőket tartalmazza (null = törlés).
+export function parseReplace(body: unknown): { exercise_id: string; scope: Scope } {
+  const b = reqObject(body);
+  rejectUnknown(b, ['exercise_id', 'scope']);
+  if (!SCOPES.includes(b.scope as Scope)) throw new ValidationError('scope', 'Érvénytelen hatókör.');
+  return { exercise_id: assertUuid(b.exercise_id, 'exercise_id'), scope: b.scope as Scope };
+}
+
 export function parseRowUpdate(body: unknown): { fields: Record<string, unknown>; scope: Scope } {
   const b = reqObject(body);
   rejectUnknown(b, ['scope', 'section', 'sets', 'reps', 'resistance', 'rest_seconds', 'note']);
