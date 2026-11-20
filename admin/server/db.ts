@@ -66,7 +66,7 @@ export function dbError(error: NonNullable<DbError>): ApiError {
     return new ApiError(
       503,
       'migration_missing',
-      'Az adatbázis még nincs felkészítve: futtasd le a supabase/003-admin.sql és a supabase/004-admin.sql fájlt a Supabase SQL Editorban.',
+      'Az adatbázis még nincs felkészítve: futtasd le sorban a supabase/003-admin.sql … 006-ugyfel-reszletek.sql fájlokat a Supabase SQL Editorban.',
     );
   }
   if (error.status === 401 || error.status === 403 || code === 'PGRST301' || /invalid api key/i.test(msg)) {

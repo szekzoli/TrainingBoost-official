@@ -144,6 +144,42 @@ async function getRow(db: SupabaseClient, id: string): Promise<ClientRow> {
   return toRow(data as unknown as RawClient, ov.get(id));
 }
 
+export type ClientWorkout = {
+  plan_day_id: string;
+  plan_id: string;
+  plan_title: string;
+  week: number;
+  day: number;
+  day_title: string | null;
+  performed_on: string | null;
+  completed_at: string | null;
+  created_at: string;
+  rating: number | null;
+  note: string | null;
+  sets: {
+    exercise_id: string;
+    exercise_name: string;
+    position: number;
+    set_number: number;
+    weight_kg: number | null;
+    reps: number | null;
+    prescribed_sets: number;
+    prescribed_reps: string;
+    prescribed_resistance: string | null;
+  }[];
+};
+
+// Az ügyfél-oldal adatai: az ügyfél sora és a teljes napló (a legújabb elöl).
+export async function getClientDetail(
+  db: SupabaseClient,
+  idRaw: unknown,
+): Promise<{ client: ClientRow; workouts: ClientWorkout[] }> {
+  const id = assertUuid(idRaw);
+  const client = await getRow(db, id);
+  const workouts = (await callRpc<ClientWorkout[]>(db, 'admin_client_detail', { p_client: id })) ?? [];
+  return { client, workouts };
+}
+
 // Részletek a módosítás előtti figyelmeztetéshez: hány naplózott edzése van az ügyfélnek.
 export async function getClient(db: SupabaseClient, idRaw: unknown): Promise<ClientRow & { log_count: number }> {
   const id = assertUuid(idRaw);

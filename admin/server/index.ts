@@ -5,7 +5,7 @@ import { API_PORT, HOST, UI_PORT } from '../ports.ts';
 import { loadConfig, type ConfigResult } from './config.ts';
 import { ApiError, createDb, dbError, unknownError, type SupabaseClient } from './db.ts';
 import { createExercise, deleteExercise, listExercises, updateExercise } from './exercises.ts';
-import { createClient, getClient, listClients, regenerateLink, remindersIcs, updateClient } from './clients.ts';
+import { createClient, getClient, getClientDetail, listClients, regenerateLink, remindersIcs, updateClient } from './clients.ts';
 import { addDay, addRow, deleteDay, deleteRow, setGroup, setOrder, updateDay, updateRow } from './editor.ts';
 import {
   copyPlan,
@@ -173,6 +173,11 @@ async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
     if (method === 'GET') return { status: 200, body: { client: await getClient(db, m[1]) } };
     if (method === 'PATCH') return { status: 200, body: { client: await updateClient(db, m[1], await readJson(req)) } };
     throw noMethod();
+  }
+
+  if ((m = matchPath(path, '/api/clients/:id/detail'))) {
+    if (method !== 'GET') throw noMethod();
+    return { status: 200, body: await getClientDetail(db, m[1]) };
   }
 
   if ((m = matchPath(path, '/api/clients/:id/new-link'))) {

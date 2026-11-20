@@ -40,7 +40,9 @@ function ClientLine({ c, extra }: { c: ClientRow; extra: React.ReactNode }) {
   return (
     <li className="flex items-center gap-4 py-2.5">
       <div className="min-w-0 flex-1">
-        <div className="font-semibold">{c.label}</div>
+        <Link to={`/ugyfel/${c.id}`} className="font-semibold hover:text-teal hover:underline">
+          {c.label}
+        </Link>
         <Link to={`/terv/${c.plan_id}`} className="block truncate text-xs text-muted hover:text-teal hover:underline">
           {c.plan_title}
         </Link>

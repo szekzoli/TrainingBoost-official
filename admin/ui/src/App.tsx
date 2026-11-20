@@ -3,6 +3,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, type Status } from './api';
 import Exercises from './pages/Exercises';
 import Clients from './pages/Clients';
+import ClientDetail from './pages/ClientDetail';
 import Dashboard from './pages/Dashboard';
 import PlanEditor from './pages/PlanEditor';
 import Plans from './pages/Plans';
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="/terv/:id" element={<PlanEditor />} />
             <Route path="/gyakorlattar" element={<Exercises />} />
             <Route path="/ugyfelek" element={<Clients />} />
+            <Route path="/ugyfel/:id" element={<ClientDetail />} />
             <Route path="*" element={<Navigate to="/attekintes" replace />} />
           </Routes>
         )}

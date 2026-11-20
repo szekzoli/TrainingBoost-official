@@ -288,7 +288,7 @@ function LinkDialog({ label, link, onClose }: { label: string; link: string; onC
   );
 }
 
-function EditClientDialog({
+export function EditClientDialog({
   client,
   plans,
   onClose,
@@ -528,7 +528,9 @@ export default function Clients() {
               {visible.map((c) => (
                 <tr key={c.id} className={`border-b border-line last:border-b-0 ${c.revoked_at ? 'bg-canvas text-muted' : ''}`}>
                   <td className="px-4 py-3">
-                    <span className="font-semibold">{c.label}</span>
+                    <Link to={`/ugyfel/${c.id}`} className="font-semibold text-navy underline decoration-line underline-offset-4 hover:text-teal">
+                      {c.label}
+                    </Link>
                     {c.coach_note && (
                       <span className="mt-0.5 block max-w-48 truncate text-xs text-muted" title={c.coach_note}>
                         {c.coach_note}

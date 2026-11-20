@@ -116,6 +116,31 @@ export type ClientRow = {
   due_status: 'overdue' | 'soon' | 'ok' | 'none';
 };
 
+export type ClientWorkout = {
+  plan_day_id: string;
+  plan_id: string;
+  plan_title: string;
+  week: number;
+  day: number;
+  day_title: string | null;
+  performed_on: string | null;
+  completed_at: string | null;
+  created_at: string;
+  rating: number | null;
+  note: string | null;
+  sets: {
+    exercise_id: string;
+    exercise_name: string;
+    position: number;
+    set_number: number;
+    weight_kg: number | null;
+    reps: number | null;
+    prescribed_sets: number;
+    prescribed_reps: string;
+    prescribed_resistance: string | null;
+  }[];
+};
+
 export type ClientCreateInput = {
   label: string;
   plan_id?: string;
@@ -219,6 +244,8 @@ export const api = {
     request<{ client: ClientRow & { log_count: number } }>('GET', `/api/clients/${id}`).then((r) => r.client),
   createClient: (input: ClientCreateInput) =>
     request<{ client: ClientRow; link: string; created_plan_id: string | null }>('POST', '/api/clients', input),
+  getClientDetail: (id: string) =>
+    request<{ client: ClientRow; workouts: ClientWorkout[] }>('GET', `/api/clients/${id}/detail`),
   regenerateLink: (id: string) => request<{ client: ClientRow; link: string }>('POST', `/api/clients/${id}/new-link`, {}),
   updateClient: (id: string, input: ClientPatch) =>
     request<{ client: ClientRow }>('PATCH', `/api/clients/${id}`, input).then((r) => r.client),
