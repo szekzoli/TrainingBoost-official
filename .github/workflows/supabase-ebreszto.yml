@@ -1,0 +1,44 @@
+# Supabase ébresztő: az ingyenes Supabase-projekt 7 nap tétlenség után szünetel, és az app ilyenkor
+# "Nem érjük el a szervert" hibát ad. Ez a feladat 3 naponta egy apró kérést küld (app_ping),
+# így a projekt nem alszik el.
+#
+# Beállítás (egyszer): GitHub -> a repó -> Settings -> Secrets and variables -> Actions -> New repository secret
+#   SUPABASE_URL       = https://<projekt>.supabase.co
+#   SUPABASE_ANON_KEY  = a publikus (anon / publishable) kulcs, ugyanaz, ami a Netlify-on is van.
+#                        NEM a titkos (secret / service_role) kulcs!
+# Előfeltétel: a supabase/005-kovetes.sql lefutott (abban van az app_ping függvény).
+# Ütemezett futás csak az alapértelmezett ágon (main) működik; kézzel bármikor indítható (Run workflow).
+name: Supabase ébresztő
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: app_ping hívása
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Nincs beállítva a SUPABASE_URL / SUPABASE_ANON_KEY titok, kihagyva."
+            exit 0
+          fi
+          status=$(curl -sS -o /tmp/valasz.txt -w '%{http_code}' -X POST \
+            "$SUPABASE_URL/rest/v1/rpc/app_ping" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "Válasz: HTTP $status"
+          if [ "$status" != "200" ]; then
+            cat /tmp/valasz.txt
+            exit 1
+          fi
