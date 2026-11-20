@@ -96,3 +96,48 @@ export function previousSets(
   }
   return result;
 }
+
+/** Az ismétlés-előírás felső értéke ("8-12" → 12, "10" → 10, "10-10" → 10). Csak tiszta számos
+ *  előírásnál (idő, távolság, "bukásig" esetén null). */
+export function topReps(reps: string): number | null {
+  const m = reps.trim().match(/^(\d+)(?:\s*[-–]\s*(\d+))?$/);
+  if (!m) return null;
+  const a = Number(m[1]);
+  const b = m[2] ? Number(m[2]) : null;
+  return b !== null && b > a ? b : a;
+}
+
+/**
+ * Kettős progresszió: ha legutóbb minden előírt sorozat megvolt legalább a felső ismétlésszámmal,
+ * ugyanazzal (vagy nagyobb) súllyal, akkor ideje emelni. A javasolt súly a legutóbbi + 2,5 kg (5%-ig).
+ */
+export function progressionTip(item: PlanExercise, prev: Map<number, SetLog>): { from: number; to: number } | null {
+  const top = topReps(item.reps);
+  if (top === null || item.sets < 1) return null;
+  const sets = [...prev.values()].filter((s) => s.set_number <= item.sets);
+  if (sets.length < item.sets) return null;
+  if (!sets.every((s) => (s.reps ?? 0) >= top && s.weight_kg !== null && s.weight_kg > 0)) return null;
+  const w = Math.min(...sets.map((s) => s.weight_kg as number));
+  const step = w >= 20 ? 2.5 : 1;
+  return { from: w, to: Math.round((w + step) * 100) / 100 };
+}
+
+/** Az adott gyakorlat eddigi legnagyobb súlya, a megadott (sor, sorozat) kihagyásával. */
+export function bestWeight(
+  plan: PlanData,
+  logs: WorkoutLog[],
+  exerciseId: string,
+  except?: { dayExerciseId: string; setNumber: number },
+): number | null {
+  const exerciseOf = new Map<string, string>();
+  for (const d of plan.days) for (const e of d.exercises) exerciseOf.set(e.id, e.exercise.id);
+  let best: number | null = null;
+  for (const log of logs) {
+    for (const s of log.sets) {
+      if (s.weight_kg === null || exerciseOf.get(s.day_exercise_id) !== exerciseId) continue;
+      if (except && s.day_exercise_id === except.dayExerciseId && s.set_number === except.setNumber) continue;
+      if (best === null || s.weight_kg > best) best = s.weight_kg;
+    }
+  }
+  return best;
+}

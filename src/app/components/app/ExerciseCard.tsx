@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, Info, Play } from 'lucide-react';
+import { Check, Info, Play, TrendingUp } from 'lucide-react';
 import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/app-api';
 import { getVideoEmbedUrl } from '../../../lib/video';
 import PrescriptionBar from './PrescriptionBar';
 import { useRestTimer } from './RestTimer';
 import { useSession } from './session';
 import {
+  bestWeight,
   formatSet,
+  progressionTip,
   isLoggable,
   isSetDone,
   previousSets,
@@ -45,6 +47,7 @@ function SetRow({
   repsPh,
   restSeconds,
   exerciseName,
+  bestBefore,
 }: {
   dayExerciseId: string;
   setNumber: number;
@@ -54,6 +57,8 @@ function SetRow({
   repsPh: string;
   restSeconds: number | null;
   exerciseName: string;
+  /** Az eddigi legnagyobb súly ennél a gyakorlatnál (ezt a sorozatot nem számítva). */
+  bestBefore: number | null;
 }) {
   const { logSet } = useSession();
   const timer = useRestTimer();
@@ -73,7 +78,13 @@ function SetRow({
     try {
       const ok = await logSet(dayExerciseId, setNumber, w, r);
       if (!ok) restore(); // hozzájárulás nélkül nem mentünk
-      else if (startRest && restSeconds) timer.start(restSeconds, `${exerciseName}, ${setNumber}. sorozat után`);
+      else {
+        if (startRest && restSeconds) timer.start(restSeconds, `${exerciseName}, ${setNumber}. sorozat után`);
+        // Új egyéni rekord: nagyobb súly, mint eddig bármikor (és volt már korábbi súly)
+        if (w !== null && bestBefore !== null && w > bestBefore) {
+          toast.success(`Új rekord: ${fmtWeight(w)} kg! 💪`, { description: exerciseName });
+        }
+      }
     } catch {
       restore();
       toast.error('Nem sikerült menteni. Ellenőrizd a kapcsolatot, és próbáld újra.');
@@ -192,7 +203,9 @@ export default function ExerciseCard({
   const image = item.exercise.image_url?.trim() || null;
   const [imageOk, setImageOk] = useState(true);
   const hasDetails = hasVideo || !!image || !!item.note?.trim() || !!item.exercise.technique_note?.trim();
-  const weightPh = weightPlaceholder(item.resistance);
+  const tip = progressionTip(item, prev);
+  // Ha legutóbb megvolt minden sorozat a felső ismétlésszámmal, a súly javaslata a megemelt érték
+  const weightPh = tip ? fmtWeight(tip.to) : weightPlaceholder(item.resistance);
   const repsPh = repsPlaceholder(item.reps);
 
   return (
@@ -248,6 +261,16 @@ export default function ExerciseCard({
 
       <PrescriptionBar item={item} />
 
+      {isLoggable(item) && tip && (
+        <p className="mx-3 mt-3 flex items-start gap-2 rounded-[10px] border border-app-teal/40 bg-app-mint px-3 py-2 text-xs text-app-ink">
+          <TrendingUp className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Múltkor minden sorozat megvolt a felső ismétlésszámmal ({fmtWeight(tip.from)} kg). Próbáld meg{' '}
+            <strong>{fmtWeight(tip.to)} kg</strong>-mal, ha a technika rendben van.
+          </span>
+        </p>
+      )}
+
       {isLoggable(item) && (
         <div className="space-y-1 px-3 py-3">
           <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] gap-1.5 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-app-muted">
@@ -268,6 +291,7 @@ export default function ExerciseCard({
               repsPh={repsPh}
               restSeconds={item.rest_seconds}
               exerciseName={item.exercise.name}
+              bestBefore={bestWeight(plan, logs, item.exercise.id, { dayExerciseId: item.id, setNumber: n })}
             />
           ))}
         </div>
