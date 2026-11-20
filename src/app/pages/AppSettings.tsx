@@ -14,9 +14,17 @@ import {
   AlertDialogTrigger,
 } from '../components/ui/alert-dialog';
 import { useSession } from '../components/app/session';
+import { usePrefs, type ThemePref } from '../components/app/prefs';
+
+const THEMES: { value: ThemePref; label: string }[] = [
+  { value: 'light', label: 'Világos' },
+  { value: 'dark', label: 'Sötét' },
+  { value: 'system', label: 'Mint a telefon' },
+];
 
 export default function AppSettings() {
   const { deleteMyData } = useSession();
+  const { theme, setTheme, restTimer, setRestTimer } = usePrefs();
   const [busy, setBusy] = useState(false);
 
   const remove = async () => {
@@ -36,6 +44,43 @@ export default function AppSettings() {
       </Link>
       <h1 className="text-2xl font-bold">Beállítások</h1>
 
+      <section className="space-y-3 border border-app-navy/15 p-4">
+        <h2 className="font-semibold">Megjelenés</h2>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Téma">
+          {THEMES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              role="radio"
+              aria-checked={theme === t.value}
+              onClick={() => setTheme(t.value)}
+              className={`min-h-11 rounded-[10px] border px-2 text-sm font-semibold ${
+                theme === t.value ? 'border-app-teal bg-app-mint text-app-ink' : 'border-app-line'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-2 border border-app-navy/15 p-4">
+        <label className="flex items-center justify-between gap-4">
+          <span>
+            <span className="block font-semibold">Pihenőidő-számláló</span>
+            <span className="block text-sm text-app-navy/70">
+              Egy sorozat kipipálása után visszaszámol, ha az edzésterv megad pihenőidőt.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={restTimer}
+            onChange={(e) => setRestTimer(e.target.checked)}
+            className="size-6 shrink-0 accent-[var(--color-app-teal)]"
+          />
+        </label>
+      </section>
+
       <section className="space-y-2 border border-app-navy/15 p-4">
         <h2 className="font-semibold">Adatkezelés</h2>
         <p className="text-sm leading-relaxed text-app-navy/80">
@@ -54,7 +99,7 @@ export default function AppSettings() {
             <button
               type="button"
               disabled={busy}
-              className="h-12 w-full rounded-lg border border-red-700 text-base font-semibold text-red-700 disabled:opacity-50"
+              className="h-12 w-full rounded-lg border border-red-700 text-base font-semibold text-red-700 disabled:opacity-50 dark:border-red-400 dark:text-red-400"
             >
               Adataim törlése
             </button>

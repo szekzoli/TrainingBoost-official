@@ -203,7 +203,7 @@ export default function AppPrint() {
   return (
     <>
       <style>{PRINT_CSS}</style>
-      <div className="pp-toolbar sticky top-0 z-10 border-b border-[#D5DDE6] bg-white">
+      <div className="pp-toolbar sticky top-0 z-10 border-b border-app-line bg-white">
         <div className="mx-auto flex min-h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <button
             type="button"

@@ -16,6 +16,7 @@ export type PlanExercise = {
     id: string;
     name: string;
     video_url: string | null;
+    image_url?: string | null;
     technique_note: string | null;
   };
 };
@@ -29,7 +30,7 @@ export type PlanDay = {
 };
 
 export type PlanData = {
-  plan: { id: string; slug: string; title: string; description: string | null };
+  plan: { id: string; slug: string; title: string; description: string | null; started_on?: string | null };
   days: PlanDay[];
 };
 
@@ -44,12 +45,14 @@ export type SetLog = {
 export type WorkoutLog = {
   plan_day_id: string;
   completed_at: string | null;
+  /** Az edzés tényleges napja (ÉÉÉÉ-HH-NN), az ügyfél állíthatja. Régi adatbázisnál hiányozhat. */
+  performed_on?: string | null;
   note: string | null;
   created_at: string;
   sets: SetLog[];
 };
 
-export type ApiErrorKind = 'invalid_code' | 'consent_required' | 'not_configured' | 'other';
+export type ApiErrorKind = 'invalid_code' | 'consent_required' | 'not_configured' | 'network' | 'other';
 
 export class AppApiError extends Error {
   kind: ApiErrorKind;
@@ -66,11 +69,22 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   } catch {
     throw new AppApiError('not_configured');
   }
-  const { data, error } = await supabase.rpc(fn, args);
+  let res;
+  try {
+    res = await supabase.rpc(fn, args);
+  } catch {
+    throw new AppApiError('network');
+  }
+  const { data, error } = res;
   if (error) {
     const msg = error.message || '';
     if (msg.includes('invalid_code')) throw new AppApiError('invalid_code');
     if (msg.includes('consent_required')) throw new AppApiError('consent_required');
+    // A böngésző hálózati hibája (nincs net, a szerver alszik / nem válaszol): a supabase-js ilyenkor
+    // nem dob kivételt, hanem a fetch hibaüzenetét adja vissza.
+    if (/failed to fetch|networkerror|load failed|network request failed|fetch failed/i.test(msg)) {
+      throw new AppApiError('network');
+    }
     throw new AppApiError('other');
   }
   return data as T;
@@ -95,8 +109,14 @@ export const appApi = {
       p_weight: weight,
       p_reps: reps,
     }),
+  setWorkoutDate: (code: string, planDayId: string, date: string | null) =>
+    rpc<{ plan_day_id: string; performed_on: string | null }>('app_set_workout_date', {
+      p_code: code,
+      p_plan_day_id: planDayId,
+      p_date: date,
+    }),
   completeDay: (code: string, planDayId: string, note: string | null) =>
-    rpc<{ plan_day_id: string; completed_at: string; note: string | null }>('app_complete_day', {
+    rpc<{ plan_day_id: string; completed_at: string; performed_on?: string | null; note: string | null }>('app_complete_day', {
       p_code: code,
       p_plan_day_id: planDayId,
       p_note: note,

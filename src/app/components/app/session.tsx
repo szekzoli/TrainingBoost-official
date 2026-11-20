@@ -34,9 +34,12 @@ function storeRemove(key: string) {
 }
 
 export type SessionStatus = 'loading' | 'ready' | 'nocode' | 'invalid' | 'error' | 'deleted';
+export type ErrorKind = 'network' | 'not_configured' | 'other';
 
 type Session = {
   status: SessionStatus;
+  /** Csak status === 'error' esetén: mi a hiba oka (más üzenetet mutatunk). */
+  errorKind: ErrorKind;
   plan: PlanData | null;
   logs: WorkoutLog[];
   consentOpen: boolean;
@@ -50,6 +53,8 @@ type Session = {
     reps: number | null,
   ) => Promise<boolean>;
   completeDay: (planDayId: string, note: string | null) => Promise<boolean>;
+  /** Az edzés napja (ÉÉÉÉ-HH-NN) vagy null. */
+  setWorkoutDate: (planDayId: string, date: string | null) => Promise<boolean>;
   deleteMyData: () => Promise<void>;
   reload: () => void;
 };
@@ -72,6 +77,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [reloadTick, setReloadTick] = useState(0);
+  const [errorKind, setErrorKind] = useState<ErrorKind>('other');
 
   const [consentOpen, setConsentOpen] = useState(false);
   const consentResolver = useRef<((ok: boolean) => void) | null>(null);
@@ -104,6 +110,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setCode(null);
           setStatus('invalid');
         } else {
+          setErrorKind(
+            e instanceof AppApiError && (e.kind === 'network' || e.kind === 'not_configured') ? e.kind : 'other',
+          );
           setStatus('error');
         }
       });
@@ -196,7 +205,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     async (planDayId, note) => {
       const r = await withConsent((c) => appApi.completeDay(c, planDayId, note));
       if (!r) return false;
-      upsertLog(planDayId, (l) => ({ ...l, completed_at: r.completed_at, note: r.note }));
+      upsertLog(planDayId, (l) => ({
+        ...l,
+        completed_at: r.completed_at,
+        note: r.note,
+        performed_on: r.performed_on !== undefined ? r.performed_on : l.performed_on,
+      }));
+      return true;
+    },
+    [withConsent],
+  );
+
+  const setWorkoutDate: Session['setWorkoutDate'] = useCallback(
+    async (planDayId, date) => {
+      const r = await withConsent((c) => appApi.setWorkoutDate(c, planDayId, date));
+      if (!r) return false;
+      upsertLog(planDayId, (l) => ({ ...l, performed_on: r.performed_on }));
       return true;
     },
     [withConsent],
@@ -219,6 +243,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<Session>(
     () => ({
       status,
+      errorKind,
       plan,
       logs,
       consentOpen,
@@ -226,10 +251,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       declineConsent,
       logSet,
       completeDay,
+      setWorkoutDate,
       deleteMyData,
       reload,
     }),
-    [status, plan, logs, consentOpen, acceptConsent, declineConsent, logSet, completeDay, deleteMyData, reload],
+    [
+      status,
+      errorKind,
+      plan,
+      logs,
+      consentOpen,
+      acceptConsent,
+      declineConsent,
+      logSet,
+      completeDay,
+      setWorkoutDate,
+      deleteMyData,
+      reload,
+    ],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

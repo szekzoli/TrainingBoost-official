@@ -127,9 +127,30 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  /* /app edzésnapló palettája */
+}
+
+/* /app edzésnapló palettája. Nem "inline": a segédosztályok változót használnak (var(--color-app-…)),
+   így a sötét mód (.app-dark) egyszerűen felülírhatja őket. */
+@theme {
   --color-app-navy: #0f2a47;
   --color-app-teal: #0d9488;
+  --color-app-ink: #0b7566;   /* teal szöveg és keret */
+  --color-app-mint: #eaf6f3;  /* világos teal háttér */
+  --color-app-line: #d5dde6;  /* keretek */
+  --color-app-muted: #5b6b7d; /* másodlagos szöveg */
+}
+
+/* Sötét mód az edzésnaplóban: a navy és a fehér helyet cserél (a navy gombok világosak lesznek sötét
+   szöveggel), a teal világosabb, a keretek és a másodlagos szöveg sötét háttérhez igazodik. */
+.app-dark {
+  --color-app-navy: #e6edf5;
+  --color-white: #0d1622;
+  --color-app-teal: #2dd4bf;
+  --color-app-ink: #5eead4;
+  --color-app-mint: #11302c;
+  --color-app-line: #2a3a4d;
+  --color-app-muted: #9fb0c3;
+  color-scheme: dark;
 }
 
 @layer base {

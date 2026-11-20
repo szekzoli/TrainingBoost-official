@@ -5,6 +5,7 @@ import { Check, Info, Play } from 'lucide-react';
 import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/app-api';
 import { getVideoEmbedUrl } from '../../../lib/video';
 import PrescriptionBar from './PrescriptionBar';
+import { useRestTimer } from './RestTimer';
 import { useSession } from './session';
 import {
   formatSet,
@@ -33,7 +34,7 @@ function parseReps(s: string): number | null | 'invalid' {
 }
 
 const inputClass =
-  'h-11 w-full rounded-[10px] border border-[#D5DDE6] bg-white px-1 text-center text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal';
+  'h-11 w-full rounded-[10px] border border-app-line bg-white px-1 text-center text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal';
 
 function SetRow({
   dayExerciseId,
@@ -42,6 +43,8 @@ function SetRow({
   prev,
   weightPh,
   repsPh,
+  restSeconds,
+  exerciseName,
 }: {
   dayExerciseId: string;
   setNumber: number;
@@ -49,8 +52,11 @@ function SetRow({
   prev: SetLog | undefined;
   weightPh: string;
   repsPh: string;
+  restSeconds: number | null;
+  exerciseName: string;
 }) {
   const { logSet } = useSession();
+  const timer = useRestTimer();
   const [weight, setWeight] = useState(fmtWeight(saved?.weight_kg));
   const [reps, setReps] = useState(saved?.reps?.toString() ?? '');
   const [saving, setSaving] = useState(false);
@@ -62,11 +68,12 @@ function SetRow({
   };
 
   /** Mentés; a (null, null) pár a sor visszavonását jelenti (nincs külön RPC). */
-  const save = async (w: number | null, r: number | null) => {
+  const save = async (w: number | null, r: number | null, startRest = false) => {
     setSaving(true);
     try {
       const ok = await logSet(dayExerciseId, setNumber, w, r);
       if (!ok) restore(); // hozzájárulás nélkül nem mentünk
+      else if (startRest && restSeconds) timer.start(restSeconds, `${exerciseName}, ${setNumber}. sorozat után`);
     } catch {
       restore();
       toast.error('Nem sikerült menteni. Ellenőrizd a kapcsolatot, és próbáld újra.');
@@ -80,6 +87,7 @@ function SetRow({
     if (done) {
       setWeight('');
       setReps('');
+      timer.stop();
       await save(null, null);
       return;
     }
@@ -100,7 +108,7 @@ function SetRow({
       setWeight(fmtWeight(w));
       setReps(r?.toString() ?? '');
     }
-    await save(w, r);
+    await save(w, r, true);
   };
 
   // Kész sor módosítása: blur-ra mentünk. Nem kész sort csak a pipa ment.
@@ -120,11 +128,11 @@ function SetRow({
   return (
     <div
       className={`grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] items-center gap-1.5 rounded-[10px] border px-1.5 py-1 ${
-        done ? 'border-app-teal/40 bg-[#EAF6F3]' : 'border-transparent'
+        done ? 'border-app-teal/40 bg-app-mint' : 'border-transparent'
       }`}
     >
-      <span className="text-sm font-semibold text-[#5B6B7D]">{setNumber}</span>
-      <span className="text-[11px] leading-tight text-[#5B6B7D]">{prev ? formatSet(prev) : '–'}</span>
+      <span className="text-sm font-semibold text-app-muted">{setNumber}</span>
+      <span className="text-[11px] leading-tight text-app-muted">{prev ? formatSet(prev) : '–'}</span>
       <input
         inputMode="decimal"
         aria-label={`${setNumber}. sorozat súly (kg)`}
@@ -150,7 +158,7 @@ function SetRow({
         aria-pressed={done}
         aria-label={done ? `${setNumber}. sorozat kész, visszavonás` : `${setNumber}. sorozat kész`}
         className={`flex size-11 items-center justify-center rounded-[10px] border transition disabled:opacity-50 ${
-          done ? 'border-app-teal bg-app-teal text-white' : 'border-[#D5DDE6] bg-white text-app-navy/30'
+          done ? 'border-app-teal bg-app-teal text-white' : 'border-app-line bg-white text-app-navy/30'
         }`}
       >
         <Check className="size-5" strokeWidth={3} />
@@ -181,24 +189,48 @@ export default function ExerciseCard({
   const currentLog = logs.find((l) => l.plan_day_id === planDayId);
   const prev = previousSets(plan, logs, planDayId, item.exercise.id);
   const hasVideo = getVideoEmbedUrl(item.exercise.video_url) !== null;
-  const hasDetails = hasVideo || !!item.note?.trim() || !!item.exercise.technique_note?.trim();
+  const image = item.exercise.image_url?.trim() || null;
+  const [imageOk, setImageOk] = useState(true);
+  const hasDetails = hasVideo || !!image || !!item.note?.trim() || !!item.exercise.technique_note?.trim();
   const weightPh = weightPlaceholder(item.resistance);
   const repsPh = repsPlaceholder(item.reps);
 
   return (
-    <article className={embedded ? 'bg-white' : 'overflow-hidden rounded-[14px] border border-[#D5DDE6] bg-white'}>
+    <article className={embedded ? 'bg-white' : 'overflow-hidden rounded-[14px] border border-app-line bg-white'}>
       <div className="flex items-center gap-3 px-3 py-3">
-        {hasVideo && (
+        {image && imageOk ? (
           <Link
             to={detailsHref}
-            aria-label={`${item.exercise.name} videó`}
-            className="flex size-[52px] shrink-0 items-center justify-center rounded-[10px] border border-app-teal/40 bg-[#EAF6F3] text-app-teal"
+            aria-label={`${item.exercise.name} ${hasVideo ? 'videó' : 'kép'}`}
+            className="relative block size-[52px] shrink-0 overflow-hidden rounded-[10px] border border-app-line bg-app-mint"
           >
-            <Play className="size-5 fill-current" />
+            <img
+              src={image}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setImageOk(false)}
+              className="size-full object-cover"
+            />
+            {hasVideo && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white">
+                <Play className="size-5 fill-current" />
+              </span>
+            )}
           </Link>
+        ) : (
+          hasVideo && (
+            <Link
+              to={detailsHref}
+              aria-label={`${item.exercise.name} videó`}
+              className="flex size-[52px] shrink-0 items-center justify-center rounded-[10px] border border-app-teal/40 bg-app-mint text-app-teal"
+            >
+              <Play className="size-5 fill-current" />
+            </Link>
+          )
         )}
         {marker && (
-          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-[#0B7566] text-sm font-bold text-[#0B7566]">
+          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-app-ink text-sm font-bold text-app-ink">
             {marker}
           </span>
         )}
@@ -218,7 +250,7 @@ export default function ExerciseCard({
 
       {isLoggable(item) && (
         <div className="space-y-1 px-3 py-3">
-          <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] gap-1.5 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#5B6B7D]">
+          <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] gap-1.5 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-app-muted">
             <span>Sor</span>
             <span>Előző</span>
             <span className="text-center">Kg</span>
@@ -234,6 +266,8 @@ export default function ExerciseCard({
               prev={prev.get(n)}
               weightPh={weightPh}
               repsPh={repsPh}
+              restSeconds={item.rest_seconds}
+              exerciseName={item.exercise.name}
             />
           ))}
         </div>

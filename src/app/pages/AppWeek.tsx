@@ -11,6 +11,7 @@ import {
   setProgress,
   weeksOf,
 } from '../components/app/plan-utils';
+import { fmtDayShort, workoutDate } from '../components/app/dates';
 
 function DayCard({ day, done: dayDone, log }: { day: PlanDay; done: boolean; log: WorkoutLog | undefined }) {
   const sections = groupExercises(day.exercises);
@@ -20,11 +21,14 @@ function DayCard({ day, done: dayDone, log }: { day: PlanDay; done: boolean; log
   return (
     <Link
       to={`/app/d/${day.week}/${day.day}`}
-      className="block rounded-[14px] border border-[#D5DDE6] bg-white p-4 active:bg-app-navy/5"
+      className="block rounded-[14px] border border-app-line bg-white p-4 active:bg-app-navy/5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs text-[#5B6B7D]">{day.day}. nap</p>
+          <p className="text-xs text-app-muted">
+            {day.day}. nap
+            {workoutDate(log) && done ? ` · ${fmtDayShort(workoutDate(log)!)}` : ''}
+          </p>
           <h2 className="text-lg font-bold leading-tight">{day.title ?? `${day.day}. edzés`}</h2>
         </div>
         <div className="flex shrink-0 items-center gap-1 pt-0.5">
@@ -34,7 +38,7 @@ function DayCard({ day, done: dayDone, log }: { day: PlanDay; done: boolean; log
             </span>
           ) : (
             progress.total > 0 && (
-              <span className="text-xs text-[#5B6B7D]">
+              <span className="text-xs text-app-muted">
                 {progress.done} / {progress.total} sorozat
               </span>
             )
@@ -52,7 +56,7 @@ function DayCard({ day, done: dayDone, log }: { day: PlanDay; done: boolean; log
         </div>
       )}
 
-      <div className="mt-3 space-y-3 border-t border-[#D5DDE6] pt-3">
+      <div className="mt-3 space-y-3 border-t border-app-line pt-3">
         {sections.map((sec, si) => (
           <div key={`${sec.name}-${si}`}>
             {sec.name && (
@@ -69,14 +73,14 @@ function DayCard({ day, done: dayDone, log }: { day: PlanDay; done: boolean; log
                       <li
                         key={it.id}
                         className={`flex items-baseline gap-2 text-sm ${
-                          ss ? 'border-l-2 border-[#0B7566] pl-2' : ''
+                          ss ? 'border-l-2 border-app-ink pl-2' : ''
                         }`}
                       >
                         {ss && (
-                          <span className="shrink-0 text-xs font-bold text-[#0B7566]">{`${block.label}${i + 1}`}</span>
+                          <span className="shrink-0 text-xs font-bold text-app-ink">{`${block.label}${i + 1}`}</span>
                         )}
                         <span className="min-w-0 flex-1 leading-snug">{it.exercise.name}</span>
-                        <span className="shrink-0 text-right text-xs text-[#5B6B7D]">
+                        <span className="shrink-0 text-right text-xs text-app-muted">
                           {[
                             isLoggable(it) ? `${it.sets} × ${it.reps}` : null,
                             it.resistance?.trim() || null,
@@ -107,7 +111,7 @@ export default function AppWeek() {
   const idx = weekNumbers.findIndex((w) => String(w) === week);
   const prevWeek = idx > 0 ? weekNumbers[idx - 1] : null;
   const nextWeek = idx >= 0 && idx < weekNumbers.length - 1 ? weekNumbers[idx + 1] : null;
-  const navClass = 'flex size-11 items-center justify-center rounded-[10px] border border-[#D5DDE6]';
+  const navClass = 'flex size-11 items-center justify-center rounded-[10px] border border-app-line';
 
   return (
     <div className="space-y-5">
@@ -118,7 +122,7 @@ export default function AppWeek() {
         {days.length > 0 && (
           <Link
             to={`/app/print/${week}`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-[#D5DDE6] px-3 text-sm font-semibold text-app-navy"
+            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-app-line px-3 text-sm font-semibold text-app-navy"
           >
             <Printer className="size-4" /> PDF
           </Link>

@@ -1,19 +1,22 @@
 import { Fragment, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowDown, Check, ChevronDown, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
+import { fmtDayLong, todayIso, workoutDate } from '../components/app/dates';
 
 export default function AppDay() {
   const { week, day } = useParams();
-  const { plan, logs, completeDay } = useSession();
+  const { plan, logs, completeDay, setWorkoutDate } = useSession();
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
   const log = planDay ? logs.find((l) => l.plan_day_id === planDay.id) : undefined;
 
   const [note, setNote] = useState(log?.note ?? '');
   const [busy, setBusy] = useState(false);
+  const [date, setDate] = useState(() => workoutDate(log) ?? todayIso());
+  const [dateBusy, setDateBusy] = useState(false);
   // Szakaszok összecsukása: csak helyi állapot (szakasz sorszáma → zárva)
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
@@ -33,10 +36,29 @@ export default function AppDay() {
   const progress = setProgress(planDay.exercises, log);
   const hrefOf = (exerciseId: string) => `/app/e/${planDay.week}/${planDay.day}/${exerciseId}`;
 
+  const savedDate = workoutDate(log);
+
+  // A dátum azonnal mentődik, ha már van naplója a napnak; különben az "Edzés kész" menti.
+  const changeDate = async (value: string) => {
+    setDate(value);
+    if (!log || !value || value === log.performed_on) return;
+    setDateBusy(true);
+    try {
+      const ok = await setWorkoutDate(planDay.id, value);
+      if (ok) toast.success('Dátum mentve.');
+    } catch {
+      toast.error('A dátumot nem sikerült menteni.');
+      setDate(savedDate ?? todayIso());
+    } finally {
+      setDateBusy(false);
+    }
+  };
+
   const finish = async () => {
     setBusy(true);
     try {
       const ok = await completeDay(planDay.id, note.trim() === '' ? null : note.trim());
+      if (ok && date && date !== todayIso() && date !== log?.performed_on) await setWorkoutDate(planDay.id, date);
       if (ok) toast.success(done ? 'Jegyzet frissítve.' : 'Edzés kész, szép munka!');
     } catch {
       toast.error('Nem sikerült menteni. Próbáld újra.');
@@ -57,7 +79,7 @@ export default function AppDay() {
           </Link>
           <Link
             to={`/app/print/${planDay.week}`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-[#D5DDE6] px-3 text-sm font-semibold text-app-navy"
+            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-app-line px-3 text-sm font-semibold text-app-navy"
           >
             <Printer className="size-4" /> PDF
           </Link>
@@ -65,11 +87,11 @@ export default function AppDay() {
         <h1 className="mt-1 text-2xl font-bold leading-tight">
           {planDay.title ?? `${planDay.day}. edzés`}
         </h1>
-        <p className="mt-1 flex items-center gap-2 text-sm text-[#5B6B7D]">
+        <p className="mt-1 flex items-center gap-2 text-sm text-app-muted">
           {planDay.week}. hét · {planDay.day}. nap
           {done && (
             <span className="inline-flex items-center gap-1 font-semibold text-app-teal">
-              <Check className="size-4" /> Kész
+              <Check className="size-4" /> Kész{savedDate ? ` · ${fmtDayLong(savedDate)}` : ''}
             </span>
           )}
         </p>
@@ -128,7 +150,7 @@ export default function AppDay() {
                   </span>
                 ) : (
                   secProgress.total > 0 && (
-                    <span className="text-xs text-[#5B6B7D]">
+                    <span className="text-xs text-app-muted">
                       {secProgress.done} / {secProgress.total} sorozat
                     </span>
                   )
@@ -142,9 +164,9 @@ export default function AppDay() {
                   isSuperset(block) ? (
                     <div
                       key={block.items[0].id}
-                      className="overflow-hidden rounded-[14px] border-[1.5px] border-[#0B7566] bg-white"
+                      className="overflow-hidden rounded-[14px] border-[1.5px] border-app-ink bg-white"
                     >
-                      <div className="flex items-center justify-between gap-3 bg-[#0B7566] px-3 py-2 text-white">
+                      <div className="flex items-center justify-between gap-3 bg-app-ink px-3 py-2 text-white">
                         <span className="text-xs font-bold uppercase tracking-wider">
                           Szuperszett {block.label}
                         </span>
@@ -155,7 +177,7 @@ export default function AppDay() {
                       {block.items.map((it, i) => (
                         <Fragment key={it.id}>
                           {i > 0 && (
-                            <div className="flex items-center gap-2 border-t border-dashed border-[#0B7566] bg-[#EAF6F3] px-3 py-2 text-xs font-semibold text-[#0B7566]">
+                            <div className="flex items-center gap-2 border-t border-dashed border-app-ink bg-app-mint px-3 py-2 text-xs font-semibold text-app-ink">
                               <ArrowDown className="size-4 shrink-0" />
                               {`${block.label}${i} után azonnal ${block.label}${i + 1}${
                                 i === block.items.length - 1 ? ', utána pihenő' : ''
@@ -193,8 +215,23 @@ export default function AppDay() {
         );
       })}
 
-      <section className="space-y-3 border-t border-[#D5DDE6] pt-6">
-        <label htmlFor="day-note" className="text-sm font-semibold">
+      <section className="space-y-3 border-t border-app-line pt-6">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="day-date" className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarDays className="size-4 text-app-teal" /> Edzés napja
+          </label>
+          <input
+            id="day-date"
+            type="date"
+            value={date}
+            max={todayIso()}
+            min="2020-01-01"
+            disabled={dateBusy}
+            onChange={(e) => void changeDate(e.target.value)}
+            className="h-11 rounded-[10px] border border-app-line bg-white px-3 text-base text-app-navy focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal disabled:opacity-50"
+          />
+        </div>
+        <label htmlFor="day-note" className="block text-sm font-semibold">
           Jegyzet az edzéshez
         </label>
         <textarea
@@ -204,7 +241,7 @@ export default function AppDay() {
           maxLength={2000}
           rows={3}
           placeholder="Hogy ment? Fájdalom, nehézség, megjegyzés…"
-          className="w-full rounded-[10px] border border-[#D5DDE6] bg-white p-3 text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal"
+          className="w-full rounded-[10px] border border-app-line bg-white p-3 text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal"
         />
         <button
           type="button"

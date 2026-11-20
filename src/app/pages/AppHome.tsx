@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Check, ChevronRight } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, TrendingUp } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone, weeksOf } from '../components/app/plan-utils';
+import { fmtDayShort, workoutDate } from '../components/app/dates';
 
 export default function AppHome() {
   const { plan, logs } = useSession();
@@ -11,6 +12,14 @@ export default function AppHome() {
   const total = plan.days.length;
   const done = plan.days.filter((d) => isDayDone(logs, d.id)).length;
   const next = plan.days.find((d) => !isDayDone(logs, d.id));
+  const lastDone = logs
+    .filter((l) => l.completed_at)
+    .map((l) => workoutDate(l))
+    .filter((d): d is string => !!d)
+    .sort()
+    .at(-1);
+  // Melyik héten tart: a következő edzés hete (ha minden kész, az utolsó hét)
+  const currentWeek = next?.week ?? weeks.at(-1)?.week;
 
   return (
     <div className="space-y-6">
@@ -40,14 +49,32 @@ export default function AppHome() {
             style={{ width: total ? `${(done / total) * 100}%` : '0%' }}
           />
         </div>
-        {next && (
+        {lastDone && <p className="mt-2 text-xs text-app-navy/60">Utolsó edzés: {fmtDayShort(lastDone)}</p>}
+        {next ? (
           <Link
             to={`/app/d/${next.week}/${next.day}`}
             className="mt-4 flex h-12 items-center justify-center rounded-lg bg-app-navy text-base font-semibold text-white"
           >
             Következő: {next.week}. hét · {next.title ?? `${next.day}. nap`}
           </Link>
+        ) : (
+          total > 0 && (
+            <p className="mt-4 rounded-lg border border-app-teal px-4 py-3 text-center text-sm font-semibold text-app-teal">
+              Minden edzést teljesítettél. Gratulálok! Hamarosan jön az új terv.
+            </p>
+          )
         )}
+      </section>
+
+      <section className="grid grid-cols-2 gap-2">
+        <Link to="/app/naptar" className="flex min-h-14 items-center gap-3 border border-app-navy/15 px-4 active:bg-app-navy/5">
+          <CalendarDays className="size-5 text-app-teal" />
+          <span className="font-semibold">Naptár</span>
+        </Link>
+        <Link to="/app/haladas" className="flex min-h-14 items-center gap-3 border border-app-navy/15 px-4 active:bg-app-navy/5">
+          <TrendingUp className="size-5 text-app-teal" />
+          <span className="font-semibold">Haladás</span>
+        </Link>
       </section>
 
       <section>
@@ -60,9 +87,16 @@ export default function AppHome() {
               <li key={week}>
                 <Link
                   to={`/app/w/${week}`}
-                  className="flex min-h-14 items-center justify-between border border-app-navy/15 px-4 py-3 active:bg-app-navy/5"
+                  className={`flex min-h-14 items-center justify-between border px-4 py-3 active:bg-app-navy/5 ${
+                    week === currentWeek && !complete ? 'border-app-teal' : 'border-app-navy/15'
+                  }`}
                 >
-                  <span className="font-semibold">{week}. hét</span>
+                  <span className="font-semibold">
+                    {week}. hét
+                    {week === currentWeek && !complete && (
+                      <span className="ml-2 text-xs font-semibold text-app-teal">aktuális</span>
+                    )}
+                  </span>
                   <span className="flex items-center gap-2 text-sm text-app-navy/70">
                     {complete && <Check className="size-4 text-app-teal" aria-label="Kész" />}
                     {weekDone} / {days.length}
