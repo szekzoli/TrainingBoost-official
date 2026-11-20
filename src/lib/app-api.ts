@@ -47,6 +47,8 @@ export type WorkoutLog = {
   completed_at: string | null;
   /** Az edzés tényleges napja (ÉÉÉÉ-HH-NN), az ügyfél állíthatja. Régi adatbázisnál hiányozhat. */
   performed_on?: string | null;
+  /** Az ügyfél értékelése: milyen nehéz volt (1–5). Régi adatbázisnál hiányozhat. */
+  rating?: number | null;
   note: string | null;
   created_at: string;
   sets: SetLog[];
@@ -114,6 +116,12 @@ export const appApi = {
       p_code: code,
       p_plan_day_id: planDayId,
       p_date: date,
+    }),
+  rateWorkout: (code: string, planDayId: string, rating: number | null) =>
+    rpc<{ plan_day_id: string; rating: number | null }>('app_rate_workout', {
+      p_code: code,
+      p_plan_day_id: planDayId,
+      p_rating: rating,
     }),
   completeDay: (code: string, planDayId: string, note: string | null) =>
     rpc<{ plan_day_id: string; completed_at: string; performed_on?: string | null; note: string | null }>('app_complete_day', {

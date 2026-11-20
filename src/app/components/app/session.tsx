@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useMatch, useNavigate } from 'react-router-dom';
+import { useLocation, useMatch, useNavigate } from 'react-router-dom';
 import {
   appApi,
   AppApiError,
@@ -55,6 +55,10 @@ type Session = {
   completeDay: (planDayId: string, note: string | null) => Promise<boolean>;
   /** Az edzés napja (ÉÉÉÉ-HH-NN) vagy null. */
   setWorkoutDate: (planDayId: string, date: string | null) => Promise<boolean>;
+  /** Milyen nehéz volt az edzés (1–5) vagy null. */
+  rateWorkout: (planDayId: string, rating: number | null) => Promise<boolean>;
+  /** A személyes hozzáférési kód (a Beállításokban a saját link megjelenítéséhez). */
+  code: string | null;
   deleteMyData: () => Promise<void>;
   reload: () => void;
 };
@@ -71,12 +75,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const entryMatch = useMatch('/app/t/:code');
   const entryCode = entryMatch?.params.code ?? null;
+  // ?telepites: a link az URL-ben marad, hogy iPhone-on a "Főképernyőhöz adás" a saját linket mentse el
+  const keepUrl = new URLSearchParams(useLocation().search).has('telepites');
 
   const [code, setCode] = useState<string | null>(() => storeGet(CODE_KEY));
   const [status, setStatus] = useState<SessionStatus>(code ? 'loading' : 'nocode');
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [reloadTick, setReloadTick] = useState(0);
+  const codeRef = useRef(code);
+  codeRef.current = code;
   const [errorKind, setErrorKind] = useState<ErrorKind>('other');
 
   const [consentOpen, setConsentOpen] = useState(false);
@@ -85,10 +93,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   // 3. /app/t/<kod>: a kódot átvesszük, az URL-t azonnal /app-ra cseréljük (history.replaceState).
   useEffect(() => {
     if (!entryCode) return;
-    setCode(entryCode);
-    setStatus('loading');
-    navigate('/app', { replace: true });
-  }, [entryCode, navigate]);
+    if (entryCode !== codeRef.current) {
+      setCode(entryCode);
+      setStatus('loading');
+    }
+    if (!keepUrl) navigate('/app', { replace: true });
+  }, [entryCode, keepUrl, navigate]);
 
   // Terv + napló betöltése. Sikeres betöltés után kerül a kód localStorage-ba.
   useEffect(() => {
@@ -226,6 +236,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [withConsent],
   );
 
+  const rateWorkout: Session['rateWorkout'] = useCallback(
+    async (planDayId, rating) => {
+      const r = await withConsent((c) => appApi.rateWorkout(c, planDayId, rating));
+      if (!r) return false;
+      upsertLog(planDayId, (l) => ({ ...l, rating: r.rating }));
+      return true;
+    },
+    [withConsent],
+  );
+
   const deleteMyData = useCallback(async () => {
     if (!code) return;
     await appApi.deleteMyData(code);
@@ -252,6 +272,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       logSet,
       completeDay,
       setWorkoutDate,
+      rateWorkout,
+      code: status === 'ready' ? code : null,
       deleteMyData,
       reload,
     }),
@@ -266,6 +288,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       logSet,
       completeDay,
       setWorkoutDate,
+      rateWorkout,
+      code,
       deleteMyData,
       reload,
     ],

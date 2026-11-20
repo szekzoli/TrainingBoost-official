@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CalendarDays, Check, ChevronRight, TrendingUp } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone, weeksOf } from '../components/app/plan-utils';
@@ -6,6 +6,7 @@ import { fmtDayShort, workoutDate } from '../components/app/dates';
 
 export default function AppHome() {
   const { plan, logs } = useSession();
+  const installMode = new URLSearchParams(useLocation().search).has('telepites');
   if (!plan) return null;
 
   const weeks = weeksOf(plan);
@@ -23,6 +24,18 @@ export default function AppHome() {
 
   return (
     <div className="space-y-6">
+      {installMode && (
+        <section className="space-y-2 rounded-[14px] border border-app-teal bg-app-mint p-4 text-sm text-app-navy">
+          <p className="font-semibold text-app-ink">Most add hozzá a főképernyőhöz</p>
+          <p>
+            Koppints alul a <strong>Megosztás</strong> gombra (négyzet felfelé nyíllal), görgess le, és válaszd a{' '}
+            <strong>Főképernyőhöz adás</strong> lehetőséget. Az ikonról mindig a saját tervedet nyitod meg.
+          </p>
+          <Link to="/app" className="inline-block font-semibold text-app-ink underline">
+            Kész, vissza
+          </Link>
+        </section>
+      )}
       <section>
         <h1 className="text-2xl font-bold leading-tight">{plan.plan.title}</h1>
         {plan.plan.description && (

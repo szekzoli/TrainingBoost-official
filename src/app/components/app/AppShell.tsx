@@ -123,6 +123,41 @@ function Gate({ bare = false }: { bare?: boolean }) {
   );
 }
 
+// Telepíthető app: a manifest a saját linkkel indul (start_url), így a kezdőképernyőről megnyitva is
+// a saját tervét látja. Csak az /app oldalakon van jelen, a nyilvános oldalt nem érinti.
+function useInstallMeta(code: string | null) {
+  useEffect(() => {
+    const origin = window.location.origin;
+    const manifest = {
+      name: 'TrainingBoost edzésnapló',
+      short_name: 'Edzésnapló',
+      start_url: code ? `${origin}/app/t/${code}` : `${origin}/app`,
+      scope: `${origin}/app`,
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#0f2a47',
+      icons: [
+        { src: `${origin}/app-icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { src: `${origin}/app-icon-512.png`, sizes: '512x512', type: 'image/png' },
+      ],
+    };
+    const added: HTMLElement[] = [];
+    const add = (tag: 'link' | 'meta', attrs: Record<string, string>) => {
+      const el = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      document.head.appendChild(el);
+      added.push(el);
+    };
+    add('link', { rel: 'manifest', href: `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}` });
+    add('link', { rel: 'apple-touch-icon', href: '/app-apple-touch-icon.png' });
+    add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: 'Edzésnapló' });
+    add('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' });
+    return () => added.forEach((el) => el.remove());
+  }, [code]);
+}
+
 function HeaderLink({ to, label, children }: { to: string; label: string; children: React.ReactNode }) {
   return (
     <NavLink
@@ -140,8 +175,9 @@ function HeaderLink({ to, label, children }: { to: string; label: string; childr
 
 function Frame() {
   const { dark } = usePrefs();
-  const { status } = useSession();
+  const { status, code } = useSession();
   const { pathname } = useLocation();
+  useInstallMeta(code);
   // Új oldalra lépve a lap tetejéről induljunk (különben pl. a hosszú edzésnapról a részletekre lépve
   // az új oldal is legörgetve nyílna meg).
   useEffect(() => {

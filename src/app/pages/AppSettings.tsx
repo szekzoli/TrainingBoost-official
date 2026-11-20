@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ChevronLeft } from 'lucide-react';
 import {
@@ -23,7 +23,20 @@ const THEMES: { value: ThemePref; label: string }[] = [
 ];
 
 export default function AppSettings() {
-  const { deleteMyData } = useSession();
+  const { deleteMyData, code } = useSession();
+  const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+  const link = code ? `${window.location.origin}/app/t/${code}` : null;
+  const copyLink = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error('A másolás nem sikerült. Jelöld ki a linket, és másold kézzel.');
+    }
+  };
   const { theme, setTheme, restTimer, setRestTimer } = usePrefs();
   const [busy, setBusy] = useState(false);
 
@@ -80,6 +93,56 @@ export default function AppSettings() {
           />
         </label>
       </section>
+
+      <section className="space-y-3 border border-app-navy/15 p-4">
+        <h2 className="font-semibold">Telepítés a telefonra</h2>
+        <p className="text-sm leading-relaxed text-app-navy/80">
+          Így a kezdőképernyőről, saját ikonnal, egy koppintással nyílik meg az edzésnaplód.
+        </p>
+        <div className="space-y-1 text-sm leading-relaxed text-app-navy/80">
+          <p>
+            <span className="font-semibold text-app-navy">iPhone (Safari):</span> koppints az alábbi gombra, majd a
+            Megosztás gombra (négyzet felfelé nyíllal) → <em>Főképernyőhöz adás</em>.
+          </p>
+          <p>
+            <span className="font-semibold text-app-navy">Android (Chrome):</span> a jobb felső ⋮ menü →{' '}
+            <em>Alkalmazás telepítése</em> vagy <em>Hozzáadás a kezdőképernyőhöz</em>.
+          </p>
+        </div>
+        {code && (
+          <button
+            type="button"
+            onClick={() => navigate(`/app/t/${code}?telepites=1`)}
+            className="h-11 w-full rounded-lg border border-app-teal text-sm font-semibold text-app-teal"
+          >
+            Előkészítés iPhone-ra
+          </button>
+        )}
+      </section>
+
+      {link && (
+        <section className="space-y-3 border border-app-navy/15 p-4">
+          <h2 className="font-semibold">A saját linked</h2>
+          <p className="text-sm leading-relaxed text-app-navy/80">
+            Ezzel a linkkel nyithatod meg az edzésnaplódat másik telefonon vagy gépen. Ne oszd meg mással: aki ismeri, az
+            látja és módosíthatja a naplódat.
+          </p>
+          <input
+            readOnly
+            value={link}
+            onFocus={(e) => e.currentTarget.select()}
+            aria-label="Saját link"
+            className="h-11 w-full rounded-[10px] border border-app-line bg-white px-3 font-mono text-xs text-app-navy"
+          />
+          <button
+            type="button"
+            onClick={() => void copyLink()}
+            className="h-11 w-full rounded-lg bg-app-navy text-sm font-semibold text-white"
+          >
+            {copied ? 'Másolva ✓' : 'Link másolása'}
+          </button>
+        </section>
+      )}
 
       <section className="space-y-2 border border-app-navy/15 p-4">
         <h2 className="font-semibold">Adatkezelés</h2>

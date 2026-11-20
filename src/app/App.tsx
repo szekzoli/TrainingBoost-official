@@ -37,7 +37,7 @@ export default function App() {
         >
           <Route index element={<Suspense fallback={null}><AppHome /></Suspense>} />
           {/* belépő link: a kódot a SessionProvider veszi át és az URL-t /app-ra cseréli */}
-          <Route path="t/:code" element={null} />
+          <Route path="t/:code" element={<Suspense fallback={null}><AppHome /></Suspense>} />
           <Route path="w/:week" element={<Suspense fallback={null}><AppWeek /></Suspense>} />
           <Route path="d/:week/:day" element={<Suspense fallback={null}><AppDay /></Suspense>} />
           <Route path="e/:week/:day/:dayExerciseId" element={<Suspense fallback={null}><AppExercise /></Suspense>} />

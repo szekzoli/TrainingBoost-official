@@ -7,9 +7,17 @@ import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, todayIso, workoutDate } from '../components/app/dates';
 
+const RATINGS = [
+  { value: 1, label: 'nagyon könnyű' },
+  { value: 2, label: 'könnyű' },
+  { value: 3, label: 'pont jó' },
+  { value: 4, label: 'nehéz' },
+  { value: 5, label: 'nagyon nehéz' },
+];
+
 export default function AppDay() {
   const { week, day } = useParams();
-  const { plan, logs, completeDay, setWorkoutDate } = useSession();
+  const { plan, logs, completeDay, setWorkoutDate, rateWorkout } = useSession();
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
   const log = planDay ? logs.find((l) => l.plan_day_id === planDay.id) : undefined;
 
@@ -51,6 +59,15 @@ export default function AppDay() {
       setDate(savedDate ?? todayIso());
     } finally {
       setDateBusy(false);
+    }
+  };
+
+  const rate = async (value: number) => {
+    const next = log?.rating === value ? null : value; // ugyanarra koppintva törli
+    try {
+      await rateWorkout(planDay.id, next);
+    } catch {
+      toast.error('Az értékelést nem sikerült menteni.');
     }
   };
 
@@ -231,6 +248,28 @@ export default function AppDay() {
             className="h-11 rounded-[10px] border border-app-line bg-white px-3 text-base text-app-navy focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal disabled:opacity-50"
           />
         </div>
+        <fieldset>
+          <legend className="text-sm font-semibold">Milyen nehéz volt?</legend>
+          <div className="mt-2 grid grid-cols-5 gap-1.5">
+            {RATINGS.map((r) => {
+              const on = log?.rating === r.value;
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => void rate(r.value)}
+                  className={`flex min-h-14 flex-col items-center justify-center rounded-[10px] border px-1 text-center ${
+                    on ? 'border-app-teal bg-app-mint text-app-ink' : 'border-app-line text-app-navy/80'
+                  }`}
+                >
+                  <span className="text-base font-bold">{r.value}</span>
+                  <span className="text-[10px] leading-tight">{r.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
         <label htmlFor="day-note" className="block text-sm font-semibold">
           Jegyzet az edzéshez
         </label>
