@@ -71,9 +71,13 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   } catch {
     throw new AppApiError('not_configured');
   }
+  // Nincs net: ne várjunk a böngésző hibájára, azonnal a helyi másolat / várólista jöhet
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new AppApiError('network');
   let res;
   try {
-    res = await supabase.rpc(fn, args);
+    const q = supabase.rpc(fn, args);
+    // Gyenge térerőnél se akadjon el a felület: 15 mp után hálózati hibának vesszük
+    res = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? await q.abortSignal(AbortSignal.timeout(15_000)) : await q;
   } catch {
     throw new AppApiError('network');
   }
@@ -84,7 +88,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
     if (msg.includes('consent_required')) throw new AppApiError('consent_required');
     // A böngésző hálózati hibája (nincs net, a szerver alszik / nem válaszol): a supabase-js ilyenkor
     // nem dob kivételt, hanem a fetch hibaüzenetét adja vissza.
-    if (/failed to fetch|networkerror|load failed|network request failed|fetch failed/i.test(msg)) {
+    if (/failed to fetch|networkerror|load failed|network request failed|fetch failed|abort|timed? ?out/i.test(msg)) {
       throw new AppApiError('network');
     }
     throw new AppApiError('other');

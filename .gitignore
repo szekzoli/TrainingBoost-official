@@ -5,3 +5,4 @@ trainingboost/
 # Admin (helyi eszköz): titkos kulcsok soha ne kerüljenek Git-be
 admin/.env*
 !admin/.env.example
+dist/

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
-import { CalendarDays, ClipboardList, Settings, TrendingUp } from 'lucide-react';
+import './install-prompt';
+import { CalendarDays, ClipboardList, Settings, TrendingUp, CloudOff } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
 import { RestTimerProvider } from './RestTimer';
@@ -173,6 +174,30 @@ function HeaderLink({ to, label, children }: { to: string; label: string; childr
   );
 }
 
+/** Net nélküli állapot jelzése: a rögzítés így is megy, a kapcsolat visszatérésekor elküldjük. */
+function OfflineBar() {
+  const { offline, pending, syncNow, status } = useSession();
+  if (status !== 'ready' || (!offline && pending === 0)) return null;
+  return (
+    <div role="status" className="border-b border-app-navy/15 bg-app-mint/60 text-app-ink">
+      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2 text-sm">
+        <CloudOff className="size-4 shrink-0" aria-hidden />
+        <span className="flex-1">
+          {offline ? 'Nincs kapcsolat. ' : ''}
+          {pending > 0
+            ? `${pending} módosítás a telefonon vár, a net visszatérésekor elküldöm.`
+            : 'A legutóbbi mentett állapotot látod, a rögzítés így is működik.'}
+        </span>
+        {pending > 0 && (
+          <button type="button" onClick={syncNow} className="rounded-[8px] px-2 py-1 font-semibold underline">
+            Küldés
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Frame() {
   const { dark } = usePrefs();
   const { status, code } = useSession();
@@ -220,6 +245,7 @@ function Frame() {
               </HeaderLink>
             </nav>
           </div>
+          <OfflineBar />
         </header>
         <main className="mx-auto max-w-md px-4 pb-28 pt-6">
           <Gate />
@@ -229,8 +255,45 @@ function Frame() {
   );
 }
 
+/**
+ * Net nélküli működés: a service worker eltárolja az app fájljait (csak éles buildben).
+ * Ha egy új kiadás után a régi lapon egy képernyő fájlja már nem létezik, egyszer újratöltjük az oldalt.
+ */
+function useOfflineSupport() {
+  useEffect(() => {
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/app-sw.js', { scope: '/app' }).catch(() => {
+        /* nem baj: net nélkül ilyenkor nem nyílik meg, de minden más működik */
+      });
+    }
+    const onPreloadError = (e: Event) => {
+      try {
+        if (sessionStorage.getItem('tb_reloaded_for_update')) return;
+        sessionStorage.setItem('tb_reloaded_for_update', '1');
+      } catch {
+        return;
+      }
+      e.preventDefault();
+      window.location.reload();
+    };
+    window.addEventListener('vite:preloadError', onPreloadError);
+    const clear = window.setTimeout(() => {
+      try {
+        sessionStorage.removeItem('tb_reloaded_for_update');
+      } catch {
+        /* nincs tároló */
+      }
+    }, 10_000);
+    return () => {
+      window.removeEventListener('vite:preloadError', onPreloadError);
+      window.clearTimeout(clear);
+    };
+  }, []);
+}
+
 export default function AppShell() {
   useAppHead();
+  useOfflineSupport();
   return (
     <SessionProvider>
       <PrefsProvider>
