@@ -209,6 +209,7 @@ export default function AppDay() {
                             detailsHref={hrefOf(it.id)}
                             marker={`${block.label}${i + 1}`}
                             embedded
+                            groupKey={block.items[0].id}
                           />
                         </Fragment>
                       ))}

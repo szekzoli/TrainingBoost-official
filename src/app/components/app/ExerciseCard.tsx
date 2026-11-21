@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, Info, Play, TrendingUp } from 'lucide-react';
+import { Check, History, Info, Play, TrendingUp } from 'lucide-react';
 import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/app-api';
 import { getVideoEmbedUrl } from '../../../lib/video';
 import PrescriptionBar from './PrescriptionBar';
@@ -35,6 +35,37 @@ function parseReps(s: string): number | null | 'invalid' {
   return Number.isInteger(n) && n >= 0 && n <= 1000 ? n : 'invalid';
 }
 
+/**
+ * Automatikus továbblépés: egy sorozat kipipálása után a következő, még nem kész sorozat sorát a képernyő
+ * közepére görgeti, és egy pillanatra kiemeli. A sorrend: blokkonként (szuperszett vagy egy gyakorlat),
+ * azon belül körönként (sorozatszám), azon belül a gyakorlatok sorrendjében. Így szuperszettnél A1 → A2 → A1…
+ * Billentyűzetet nem nyit (fókusz nélkül), hogy a pihenő-számláló látható maradjon.
+ */
+function goToNextSet(current: HTMLElement) {
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-set-row]'));
+  const groupOrder = new Map<string, number>();
+  const posInGroup = new Map<string, number>();
+  for (const r of rows) {
+    const g = r.dataset.group!;
+    if (!groupOrder.has(g)) groupOrder.set(g, groupOrder.size);
+    const key = `${g}|${r.dataset.ex}`;
+    if (!posInGroup.has(key)) posInGroup.set(key, [...posInGroup.keys()].filter((k) => k.startsWith(`${g}|`)).length);
+  }
+  const rank = (r: HTMLElement) => [
+    groupOrder.get(r.dataset.group!)!,
+    Number(r.dataset.set),
+    posInGroup.get(`${r.dataset.group}|${r.dataset.ex}`)!,
+  ];
+  const cmp = (a: number[], b: number[]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  const sorted = [...rows].sort((a, b) => cmp(rank(a), rank(b)));
+  const i = sorted.indexOf(current);
+  const next = sorted.slice(i + 1).find((r) => r.dataset.done !== 'true');
+  if (!next) return;
+  next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  next.classList.add('ring-2', 'ring-app-teal');
+  window.setTimeout(() => next.classList.remove('ring-2', 'ring-app-teal'), 1600);
+}
+
 const inputClass =
   'h-11 w-full rounded-[10px] border border-app-line bg-white px-1 text-center text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal';
 
@@ -48,7 +79,12 @@ function SetRow({
   restSeconds,
   exerciseName,
   bestBefore,
+  groupKey,
+  fillTick,
 }: {
+  groupKey: string;
+  /** A „Mint múltkor” gomb jelzése: ha nő, az üres, nem kész sort kitöltjük az előző heti értékkel. */
+  fillTick: number;
   dayExerciseId: string;
   setNumber: number;
   saved: SetLog | undefined;
@@ -67,19 +103,28 @@ function SetRow({
   const [saving, setSaving] = useState(false);
   const done = isSetDone(saved);
 
+  useEffect(() => {
+    if (fillTick === 0 || done || !prev || weight !== '' || reps !== '') return;
+    setWeight(fmtWeight(prev.weight_kg));
+    setReps(prev.reps?.toString() ?? '');
+    // csak a jelzésre reagálunk
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fillTick]);
+
   const restore = () => {
     setWeight(fmtWeight(saved?.weight_kg));
     setReps(saved?.reps?.toString() ?? '');
   };
 
   /** Mentés; a (null, null) pár a sor visszavonását jelenti (nincs külön RPC). */
-  const save = async (w: number | null, r: number | null, startRest = false) => {
+  const save = async (w: number | null, r: number | null, startRest = false, rowEl?: HTMLElement | null) => {
     setSaving(true);
     try {
       const ok = await logSet(dayExerciseId, setNumber, w, r);
       if (!ok) restore(); // hozzájárulás nélkül nem mentünk
       else {
         if (startRest && restSeconds) timer.start(restSeconds, `${exerciseName}, ${setNumber}. sorozat után`);
+        if (startRest && rowEl) window.setTimeout(() => goToNextSet(rowEl), 150);
         // Új egyéni rekord: nagyobb súly, mint eddig bármikor (és volt már korábbi súly)
         if (w !== null && bestBefore !== null && w > bestBefore) {
           toast.success(`Új rekord: ${fmtWeight(w)} kg! 💪`, { description: exerciseName });
@@ -93,7 +138,8 @@ function SetRow({
     }
   };
 
-  const toggle = async () => {
+  const toggle = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rowEl = e.currentTarget.closest<HTMLElement>('[data-set-row]');
     if (saving) return;
     if (done) {
       setWeight('');
@@ -119,7 +165,7 @@ function SetRow({
       setWeight(fmtWeight(w));
       setReps(r?.toString() ?? '');
     }
-    await save(w, r, true);
+    await save(w, r, true, rowEl);
   };
 
   // Kész sor módosítása: blur-ra mentünk. Nem kész sort csak a pipa ment.
@@ -138,12 +184,31 @@ function SetRow({
 
   return (
     <div
-      className={`grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] items-center gap-1.5 rounded-[10px] border px-1.5 py-1 ${
+      data-set-row
+      data-group={groupKey}
+      data-ex={dayExerciseId}
+      data-set={setNumber}
+      data-done={done ? 'true' : 'false'}
+      className={`grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] items-center gap-1.5 rounded-[10px] border px-1.5 py-1 transition-shadow ${
         done ? 'border-app-teal/40 bg-app-mint' : 'border-transparent'
       }`}
     >
       <span className="text-sm font-semibold text-app-muted">{setNumber}</span>
-      <span className="text-[11px] leading-tight text-app-muted">{prev ? formatSet(prev) : '–'}</span>
+      {prev && !done ? (
+        <button
+          type="button"
+          onClick={() => {
+            setWeight(fmtWeight(prev.weight_kg));
+            setReps(prev.reps?.toString() ?? '');
+          }}
+          aria-label={`${setNumber}. sorozat kitöltése a múltkori értékkel: ${formatSet(prev)}`}
+          className="-my-1 min-h-11 rounded-md text-left text-[11px] leading-tight text-app-muted underline decoration-dotted underline-offset-2"
+        >
+          {formatSet(prev)}
+        </button>
+      ) : (
+        <span className="text-[11px] leading-tight text-app-muted">{prev ? formatSet(prev) : '–'}</span>
+      )}
       <input
         inputMode="decimal"
         aria-label={`${setNumber}. sorozat súly (kg)`}
@@ -186,7 +251,10 @@ export default function ExerciseCard({
   detailsHref,
   marker,
   embedded = false,
+  groupKey,
 }: {
+  /** A blokk azonosítója (szuperszettnél közös), az automatikus továbblépés sorrendjéhez. */
+  groupKey?: string;
   item: PlanExercise;
   planDayId: string;
   plan: PlanData;
@@ -207,6 +275,11 @@ export default function ExerciseCard({
   // Ha legutóbb megvolt minden sorozat a felső ismétlésszámmal, a súly javaslata a megemelt érték
   const weightPh = tip ? fmtWeight(tip.to) : weightPlaceholder(item.resistance);
   const repsPh = repsPlaceholder(item.reps);
+  const [fillTick, setFillTick] = useState(0);
+  const hasPrev = prev.size > 0;
+  const openSets = Array.from({ length: item.sets }, (_, i) => i + 1).filter(
+    (n) => !isSetDone(currentLog?.sets.find((s) => s.day_exercise_id === item.id && s.set_number === n)),
+  );
 
   return (
     <article className={embedded ? 'bg-white' : 'overflow-hidden rounded-[14px] border border-app-line bg-white'}>
@@ -273,6 +346,17 @@ export default function ExerciseCard({
 
       {isLoggable(item) && (
         <div className="space-y-1 px-3 py-3">
+          {hasPrev && openSets.length > 0 && (
+            <div className="flex justify-end pb-1">
+              <button
+                type="button"
+                onClick={() => setFillTick((t) => t + 1)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-app-line px-3 text-xs font-semibold text-app-navy active:bg-app-navy/5"
+              >
+                <History className="size-3.5" /> Mint múltkor
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_4.25rem_3.75rem_2.75rem] gap-1.5 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-app-muted">
             <span>Sor</span>
             <span>Előző</span>
@@ -292,6 +376,8 @@ export default function ExerciseCard({
               restSeconds={item.rest_seconds}
               exerciseName={item.exercise.name}
               bestBefore={bestWeight(plan, logs, item.exercise.id, { dayExerciseId: item.id, setNumber: n })}
+              groupKey={groupKey ?? item.id}
+              fillTick={fillTick}
             />
           ))}
         </div>
