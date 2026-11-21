@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
 import './install-prompt';
+import { useMilestoneToasts } from './Milestones';
 import { CalendarDays, ClipboardList, Settings, TrendingUp, CloudOff } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
@@ -203,6 +204,7 @@ function Frame() {
   const { status, code } = useSession();
   const { pathname } = useLocation();
   useInstallMeta(code);
+  useMilestoneToasts();
   // Új oldalra lépve a lap tetejéről induljunk (különben pl. a hosszú edzésnapról a részletekre lépve
   // az új oldal is legörgetve nyílna meg).
   useEffect(() => {

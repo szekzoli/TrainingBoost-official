@@ -96,7 +96,17 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 
+/** Testsúly-mérés (kg, egy tizedes), naponta legfeljebb egy. */
+export type BodyWeight = { measured_on: string; weight_kg: number };
+
 export const appApi = {
+  getWeights: (code: string) => rpc<BodyWeight[]>('app_get_weights', { p_code: code }),
+  logWeight: (code: string, date: string, weight: number | null) =>
+    rpc<{ measured_on: string; weight_kg: number | null }>('app_log_weight', {
+      p_code: code,
+      p_date: date,
+      p_weight: weight,
+    }),
   getPlan: (code: string) => rpc<PlanData>('app_get_plan', { p_code: code }),
   getLogs: (code: string) => rpc<WorkoutLog[]>('app_get_logs', { p_code: code }),
   giveConsent: (code: string) =>

@@ -4,6 +4,7 @@ import type { PlanData, WorkoutLog } from '../../../lib/app-api';
 
 const CACHE_KEY = 'tb_app_cache_v1';
 const OUTBOX_KEY = 'tb_app_outbox_v1';
+const WEIGHTS_KEY = 'tb_app_weights_v1';
 
 export type Op =
   | { t: 'set'; dayExerciseId: string; setNumber: number; weight: number | null; reps: number | null; at: string }
@@ -51,6 +52,7 @@ export function saveOutbox(code: string, ops: Op[]) {
   if (ops.length === 0) {
     try {
       localStorage.removeItem(OUTBOX_KEY);
+    localStorage.removeItem(WEIGHTS_KEY);
     } catch {
       /* nincs teendő */
     }
@@ -63,6 +65,7 @@ export function clearOffline() {
   try {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(OUTBOX_KEY);
+    localStorage.removeItem(WEIGHTS_KEY);
   } catch {
     /* nincs teendő */
   }
@@ -72,4 +75,14 @@ export function clearOffline() {
 export function enqueue(ops: Op[], op: Op): Op[] {
   const k = opKey(op);
   return [...ops.filter((o) => opKey(o) !== k), op];
+}
+
+/** Testsúly-mérések helyi másolata (net nélkül is látszik a grafikon). */
+export function loadWeights(code: string): { measured_on: string; weight_kg: number }[] {
+  const c = read<{ code: string; items: { measured_on: string; weight_kg: number }[] }>(WEIGHTS_KEY);
+  return c && c.code === code ? c.items : [];
+}
+
+export function saveWeights(code: string, items: { measured_on: string; weight_kg: number }[]) {
+  write(WEIGHTS_KEY, { code, items });
 }

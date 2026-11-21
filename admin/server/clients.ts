@@ -173,11 +173,18 @@ export type ClientWorkout = {
 export async function getClientDetail(
   db: SupabaseClient,
   idRaw: unknown,
-): Promise<{ client: ClientRow; workouts: ClientWorkout[] }> {
+): Promise<{ client: ClientRow; workouts: ClientWorkout[]; weights: { measured_on: string; weight_kg: number }[] }> {
   const id = assertUuid(idRaw);
   const client = await getRow(db, id);
   const workouts = (await callRpc<ClientWorkout[]>(db, 'admin_client_detail', { p_client: id })) ?? [];
-  return { client, workouts };
+  // Testsúly (008-testsuly.sql). Ha a migráció még nem futott, üres lista, nem hiba.
+  const { data: w, error: wErr } = await db
+    .from('body_weights')
+    .select('measured_on, weight_kg')
+    .eq('client_id', id)
+    .order('measured_on', { ascending: true });
+  const weights = wErr ? [] : (w ?? []).map((r) => ({ measured_on: String(r.measured_on).slice(0, 10), weight_kg: Number(r.weight_kg) }));
+  return { client, workouts, weights };
 }
 
 // Részletek a módosítás előtti figyelmeztetéshez: hány naplózott edzése van az ügyfélnek.

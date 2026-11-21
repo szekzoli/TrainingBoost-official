@@ -4,10 +4,21 @@ import {
   appApi,
   AppApiError,
   CONSENT_VERSION,
+  type BodyWeight,
   type PlanData,
   type WorkoutLog,
 } from '../../../lib/app-api';
-import { clearOffline, enqueue, loadCache, loadOutbox, saveCache, saveOutbox, type Op } from './offline';
+import {
+  clearOffline,
+  enqueue,
+  loadCache,
+  loadOutbox,
+  loadWeights,
+  saveCache,
+  saveOutbox,
+  saveWeights,
+  type Op,
+} from './offline';
 import { todayIso } from './dates';
 
 const CODE_KEY = 'tb_app_code';
@@ -67,6 +78,10 @@ type Session = {
   pending: number;
   /** Várakozó módosítások azonnali elküldése (pl. a sávon lévő gombbal). */
   syncNow: () => void;
+  /** Testsúly-mérések (dátum szerint). Üres, ha még nincs, vagy a szerveren nincs bekapcsolva. */
+  weights: BodyWeight[];
+  /** Mérés mentése az adott napra; null súllyal a napi mérés törlése. */
+  logWeight: (date: string, weight: number | null) => Promise<boolean>;
   deleteMyData: () => Promise<void>;
   reload: () => void;
 };
@@ -96,6 +111,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [errorKind, setErrorKind] = useState<ErrorKind>('other');
 
   const [offline, setOffline] = useState(false);
+  const [weights, setWeights] = useState<BodyWeight[]>(() => (code ? loadWeights(code) : []));
   const [outbox, setOutbox] = useState<Op[]>(() => (code ? loadOutbox(code) : []));
   const outboxRef = useRef(outbox);
   outboxRef.current = outbox;
@@ -132,6 +148,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setOutbox(queued);
         setOffline(false);
         setStatus('ready');
+        // Testsúly: külön, nem akadályozza a betöltést (ha a 008-as SQL még nem futott, egyszerűen üres)
+        appApi
+          .getWeights(code)
+          .then((w) => {
+            if (cancelled) return;
+            setWeights(w ?? []);
+            saveWeights(code, w ?? []);
+          })
+          .catch(() => {
+            if (!cancelled) setWeights(loadWeights(code));
+          });
       })
       .catch((e) => {
         if (cancelled) return;
@@ -146,6 +173,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setPlan(c.plan);
           setLogs(c.logs);
           setOutbox(loadOutbox(code));
+          setWeights(loadWeights(code));
           setOffline(true);
           setStatus('ready');
         } else {
@@ -390,6 +418,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [write],
   );
 
+  const logWeight: Session['logWeight'] = useCallback(
+    async (date, weight) => {
+      const r = await withConsent((c) => appApi.logWeight(c, date, weight));
+      if (r === null) return false;
+      setWeights((prev) => {
+        const rest = prev.filter((w) => w.measured_on !== date);
+        const next =
+          r.weight_kg === null
+            ? rest
+            : [...rest, { measured_on: date, weight_kg: Number(r.weight_kg) }].sort((a, b) =>
+                a.measured_on.localeCompare(b.measured_on),
+              );
+        if (code) saveWeights(code, next);
+        return next;
+      });
+      return true;
+    },
+    [withConsent, code],
+  );
+
   // Helyi másolat frissen tartása (offline indításhoz)
   useEffect(() => {
     if (status === 'ready' && code && plan) saveCache(code, plan, logs);
@@ -443,6 +491,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       offline,
       pending: outbox.length,
       syncNow: () => void flush(),
+      weights,
+      logWeight,
       deleteMyData,
       reload,
     }),
@@ -462,6 +512,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       offline,
       outbox,
       flush,
+      weights,
+      logWeight,
       deleteMyData,
       reload,
     ],

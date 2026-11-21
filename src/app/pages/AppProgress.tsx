@@ -1,10 +1,12 @@
-// Haladás: gyakorlatonként az eddigi eredmények (legjobb sorozat, alkalmak, grafikon).
+// Haladás: mérföldkövek, testsúly és gyakorlatonként az eddigi eredmények (legjobb sorozat, alkalmak, grafikon).
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Table2, Trophy } from 'lucide-react';
 import type { PlanData, SetLog, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { formatSet, isSetDone } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
+import { BodyWeightCard } from '../components/app/BodyWeightCard';
+import { MilestoneList } from '../components/app/Milestones';
 
 type Session = { date: string; dayTitle: string; week: number; sets: SetLog[] };
 type ExerciseHistory = { id: string; name: string; sessions: Session[] };
@@ -201,6 +203,13 @@ export default function AppProgress() {
         <ChevronRight className="size-4 shrink-0 text-app-navy/50" />
       </Link>
 
+      <MilestoneList />
+
+      <BodyWeightCard />
+
+      {all.length > 0 && (
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-app-teal">Gyakorlatok</h2>
+      )}
       {all.length > 0 && (
         <ul className="space-y-2">
           {all.map((h) => {

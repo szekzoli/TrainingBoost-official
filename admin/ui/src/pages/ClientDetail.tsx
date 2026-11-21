@@ -1,7 +1,7 @@
 // Ügyfél-oldal: összefoglaló, edzésnapló (súlyok, jegyzetek, értékelések) és gyakorlatonkénti haladás.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, errorMessage, type ClientRow, type ClientWorkout, type PlanSummary } from '../api';
+import { api, errorMessage, type BodyWeight, type ClientRow, type ClientWorkout, type PlanSummary } from '../api';
 import { DueBadge, ProgressCell, fmtDay, relDays } from '../components/ClientBits';
 import { btn } from '../lib/util';
 import { EditClientDialog } from './Clients';
@@ -114,10 +114,47 @@ function WorkoutCard({ w }: { w: ClientWorkout }) {
   );
 }
 
+/** Testsúly: utolsó mérés, változás az első óta, kis grafikon és az utolsó mérések. */
+function WeightPanel({ weights }: { weights: BodyWeight[] }) {
+  const first = weights[0];
+  const last = weights[weights.length - 1];
+  const diff = Math.round((last.weight_kg - first.weight_kg) * 10) / 10;
+  const kg = (n: number) => n.toLocaleString('hu-HU', { maximumFractionDigits: 1 });
+  const v = weights.map((w) => w.weight_kg);
+  const min = Math.min(...v);
+  const span = Math.max(...v) - min || 1;
+  const pts = v.map((x, i) => `${v.length === 1 ? 50 : (i / (v.length - 1)) * 100},${28 - ((x - min) / span) * 24}`).join(' ');
+  return (
+    <div className="flex flex-wrap items-center gap-6 rounded-[14px] border border-line bg-white p-4">
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted">Testsúly</div>
+        <div className="mt-1 text-2xl font-bold tabular-nums">{kg(last.weight_kg)} kg</div>
+        <div className="text-xs text-muted">
+          {fmtDay(last.measured_on)}
+          {weights.length > 1 && ` · ${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${kg(Math.abs(diff))} kg ${fmtDay(first.measured_on)} óta`}
+        </div>
+      </div>
+      {weights.length > 1 && (
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-12 w-40 text-teal" aria-hidden>
+          <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        </svg>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        {weights.slice(-8).reverse().map((w) => (
+          <span key={w.measured_on} className="rounded-[8px] border border-line px-2 py-0.5 text-xs tabular-nums text-muted">
+            {fmtDay(w.measured_on)}: {kg(w.weight_kg)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ClientDetail() {
   const { id = '' } = useParams();
   const [client, setClient] = useState<ClientRow | null>(null);
   const [workouts, setWorkouts] = useState<ClientWorkout[] | null>(null);
+  const [weights, setWeights] = useState<BodyWeight[]>([]);
   const [plans, setPlans] = useState<PlanSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'workouts' | 'exercises' | 'summary'>('workouts');
@@ -129,6 +166,7 @@ export default function ClientDetail() {
       const [d, p] = await Promise.all([api.getClientDetail(id), api.listPlans(false)]);
       setClient(d.client);
       setWorkouts(d.workouts);
+      setWeights(d.weights ?? []);
       setPlans(p);
     } catch (err) {
       setError(errorMessage(err));
@@ -202,6 +240,8 @@ export default function ClientDetail() {
           <div className="text-xs text-muted">{avg ? RATING_LABELS[Math.round(avg)] : 'még nem értékelt'}</div>
         </div>
       </div>
+
+      {weights.length > 0 && <WeightPanel weights={weights} />}
 
       {client.coach_note && (
         <div className="rounded-[14px] border border-line bg-white p-4 text-sm">

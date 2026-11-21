@@ -120,6 +120,8 @@ export type ClientRow = {
   due_status: 'overdue' | 'soon' | 'ok' | 'none';
 };
 
+export type BodyWeight = { measured_on: string; weight_kg: number };
+
 export type ClientWorkout = {
   plan_day_id: string;
   plan_id: string;
@@ -249,7 +251,7 @@ export const api = {
   createClient: (input: ClientCreateInput) =>
     request<{ client: ClientRow; link: string; created_plan_id: string | null }>('POST', '/api/clients', input),
   getClientDetail: (id: string) =>
-    request<{ client: ClientRow; workouts: ClientWorkout[] }>('GET', `/api/clients/${id}/detail`),
+    request<{ client: ClientRow; workouts: ClientWorkout[]; weights?: BodyWeight[] }>('GET', `/api/clients/${id}/detail`),
   regenerateLink: (id: string) => request<{ client: ClientRow; link: string }>('POST', `/api/clients/${id}/new-link`, {}),
   updateClient: (id: string, input: ClientPatch) =>
     request<{ client: ClientRow }>('PATCH', `/api/clients/${id}`, input).then((r) => r.client),
