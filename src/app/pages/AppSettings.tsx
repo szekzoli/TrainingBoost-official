@@ -15,6 +15,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { useSession } from '../components/app/session';
 import { usePrefs, type ThemePref } from '../components/app/prefs';
+import { CalendarReminderCard } from '../components/app/CalendarReminderCard';
 import { canPromptInstall, isStandalone, promptInstall, subscribeInstall } from '../components/app/install-prompt';
 
 const THEMES: { value: ThemePref; label: string }[] = [
@@ -96,6 +97,8 @@ export default function AppSettings() {
           />
         </label>
       </section>
+
+      <CalendarReminderCard />
 
       <section className="space-y-3 border border-app-navy/15 p-4">
         <h2 className="font-semibold">Telepítés a telefonra</h2>
