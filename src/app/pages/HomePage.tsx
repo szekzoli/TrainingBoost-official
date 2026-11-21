@@ -25,7 +25,7 @@
               <Reveal delay={1}>
                 <h1 className="mt-3 font-display text-3xl font-bold leading-snug tracking-tight md:mt-4 md:text-6xl">
                   Erősebb test.<br />
-                  <span className="bg-gradient-accent bg-clip-text text-transparent italic">Stabilabb alap.</span>
+                  <span className="bg-gradient-accent bg-clip-text text-transparent italic pr-[0.15em]">Stabilabb alap.</span>
                 </h1>
               </Reveal>
 

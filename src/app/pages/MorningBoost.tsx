@@ -45,7 +45,7 @@ export default function MorningBoost() {
             </Reveal>
             <Reveal delay={1}>
               <h1 className="mt-3 font-display text-4xl font-bold leading-[1.2] md:leading-[1.15] md:text-5xl">
-                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-[0.08em]">indítsd lendülettel</span> a napod
+                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-[0.25em] -mr-[0.15em]">indítsd lendülettel</span> a napod
               </h1>
             </Reveal>
             <Reveal delay={2}>

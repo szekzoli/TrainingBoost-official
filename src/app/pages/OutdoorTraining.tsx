@@ -17,7 +17,7 @@ export default function OutdoorTraining() {
             <Reveal delay={1}>
               <h1 className="mt-3 font-display text-4xl font-bold leading-snug md:text-5xl">
                 Outdoor Boost -
-                <span className="bg-gradient-accent bg-clip-text text-transparent italic block leading-tight pr-2">
+                <span className="bg-gradient-accent bg-clip-text text-transparent italic block leading-tight pr-[0.25em]">
                   Kültéri edzés
                 </span>
               </h1>

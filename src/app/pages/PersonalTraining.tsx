@@ -15,7 +15,7 @@ export default function PersonalTraining() {
             </Reveal>
             <Reveal delay={1}>
               <h1 className="mt-3 font-display text-4xl font-bold leading-snug md:text-5xl">
-                Személyre szabott út a <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-2">céljaidhoz</span>
+                Személyre szabott út a <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-[0.25em]">céljaidhoz</span>
               </h1>
             </Reveal>
             <Reveal delay={2}>
