@@ -9,7 +9,7 @@ export const OPERATOR = {
   /** Székhely vagy levelezési cím, pl. "2600 Vác, ..." */
   address: '',
   /** Adószám (egyéni vállalkozónál). */
-  taxNumber: '',
+  taxNumber: '90476264-1-30',
   /** Egyéni vállalkozói nyilvántartási szám. */
   registrationNumber: '',
 } as const;
