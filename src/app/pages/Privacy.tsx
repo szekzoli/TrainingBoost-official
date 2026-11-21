@@ -33,7 +33,7 @@ export default function Privacy() {
       <p>Hatályos: {PRIVACY_UPDATED}</p>
       <p>
         Ebben a tájékoztatóban leírom, milyen személyes adatokat kezelek, amikor felkeresed a weboldalt, jelentkezel egy
-        edzésre, üzenetet küldesz, vagy az edzésterv-követő alkalmazást használod — és milyen jogaid vannak ezekkel
+        edzésre, üzenetet küldesz, vagy az edzésterv-követő alkalmazást használod, és milyen jogaid vannak ezekkel
         kapcsolatban. Az adatkezelés az Európai Unió általános adatvédelmi rendelete (GDPR) és az információs
         önrendelkezési jogról szóló 2011. évi CXII. törvény szerint történik.
       </p>
@@ -68,11 +68,11 @@ export default function Privacy() {
           a szerződés megkötését megelőző, a kérésedre tett lépések (GDPR 6. cikk (1) b) pont)
         </Row>
         <Row label="Megőrzés">
-          a megkeresés lezárását követő 1 évig; ha közös edzés lesz belőle, az együttműködés végét követő 1 évig — vagy
+          a megkeresés lezárását követő 1 évig; ha közös edzés lesz belőle, az együttműködés végét követő 1 évig, vagy
           korábban, ha kéred a törlést
         </Row>
         <Row label="Adatfeldolgozók">
-          Netlify, Inc. (az űrlap fogadása és a weboldal tárhelye, USA — az EU általános szerződési feltételei alapján);
+          Netlify, Inc. (az űrlap fogadása és a weboldal tárhelye, USA; az EU általános szerződési feltételei alapján);
           Google Ireland Ltd. (e-mail-fiók, amelybe az értesítés érkezik)
         </Row>
       </dl>
@@ -89,12 +89,12 @@ export default function Privacy() {
         ha a megjelenő sávon az <strong className="text-foreground">Elfogadom</strong> gombot választod.
       </p>
       <dl className="mt-4">
-        <Row label="Szolgáltatás">Google Analytics 4 — Google Ireland Ltd.</Row>
+        <Row label="Szolgáltatás">Google Analytics 4 (Google Ireland Ltd.)</Row>
         <Row label="Kezelt adatok">
           a meglátogatott oldalak, a látogatás ideje, az eszköz és a böngésző típusa, hozzávetőleges földrajzi hely (az
           IP-címet a Google nem tárolja)
         </Row>
-        <Row label="Sütik">_ga, _ga_&lt;azonosító&gt; — legfeljebb 2 évig</Row>
+        <Row label="Sütik">_ga, _ga_&lt;azonosító&gt;, legfeljebb 2 évig</Row>
         <Row label="Cél">összesített statisztika arról, mely oldalakat nézik, hogy az oldalt fejleszteni tudjam</Row>
         <Row label="Jogalap">a hozzájárulásod (GDPR 6. cikk (1) a) pont)</Row>
         <Row label="Megőrzés">a Google Analytics adatmegőrzési beállítása szerint, legfeljebb 14 hónapig</Row>
@@ -135,7 +135,7 @@ export default function Privacy() {
         <Row label="Megőrzés">
           az együttműködés végéig, illetve amíg az alkalmazásban a „Saját adatok törlése” funkcióval nem törlöd
         </Row>
-        <Row label="Adatfeldolgozó">Supabase, Inc. — az adatok az Európai Unióban (Frankfurt) tárolódnak</Row>
+        <Row label="Adatfeldolgozó">Supabase, Inc.; az adatok az Európai Unióban (Frankfurt) tárolódnak</Row>
       </dl>
 
       <H2>5. Az adatok biztonsága</H2>
@@ -152,7 +152,7 @@ export default function Privacy() {
         <a href={`mailto:${o.email}`} className={link}>
           {o.email}
         </a>{' '}
-        címre — legkésőbb egy hónapon belül válaszolok.
+        címre, és legkésőbb egy hónapon belül válaszolok.
       </p>
       <p>
         Ha úgy érzed, hogy az adataidat nem megfelelően kezelem, panasszal fordulhatsz a Nemzeti Adatvédelmi és
@@ -160,7 +160,7 @@ export default function Privacy() {
         <a href="https://naih.hu" target="_blank" rel="noreferrer" className={link}>
           naih.hu
         </a>
-        , ugyfelszolgalat@naih.hu), vagy bírósághoz fordulhatsz. Kérlek, előbb keress meg engem — a legtöbb kérdést
+        , ugyfelszolgalat@naih.hu), vagy bírósághoz fordulhatsz. Kérlek, előbb keress meg engem, a legtöbb kérdést
         gyorsan meg tudjuk oldani.
       </p>
 
@@ -180,7 +180,7 @@ export default function Privacy() {
           </a>
         </Row>
         <Row label="Tárhelyszolgáltató">
-          Netlify, Inc. — 101 2nd Street, San Francisco, CA 94105, USA · privacy@netlify.com
+          Netlify, Inc., 101 2nd Street, San Francisco, CA 94105, USA · privacy@netlify.com
         </Row>
       </dl>
     </article>

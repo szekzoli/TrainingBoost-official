@@ -11,7 +11,7 @@ const PILLARS = [
   {
     icon: Shuffle,
     title: 'Változatos mozgásminták',
-    desc: 'Guggolás, csípőhajlítás, tolás, húzás, forgatás, cipelés — szabad súllyal, kettlebell-lel, TRX-szel és saját testsúllyal, különböző terhelésekkel.',
+    desc: 'Guggolás, csípőhajlítás, tolás, húzás, forgatás, cipelés. Szabad súllyal, kettlebell-lel, TRX-szel és saját testsúllyal, különböző terhelésekkel.',
   },
   {
     icon: Move,
@@ -31,7 +31,7 @@ const PILLARS = [
   {
     icon: Sparkles,
     title: 'Küzdősportos gyakorlatok',
-    desc: 'Szokatlan, judo- és birkózóedzéseken használt gyakorlatok, amelyek az egész testet és a koordinációt is megdolgoztatják.',
+    desc: 'Nem szokványos, judo- és birkózóedzéseken használt gyakorlatok, amelyek az egész testet és a koordinációt is megdolgoztatják.',
   },
   {
     icon: Sunrise,
@@ -43,7 +43,7 @@ const PILLARS = [
 const FOR_WHOM = [
   'Ülőmunkát végzel, és érzed a derekadon, a hátadon vagy a csípődön.',
   'Elég volt a gépsorokból, és változatosabb, élvezetesebb edzést keresel.',
-  'Kezdő vagy, vagy hosszabb kihagyás után térnél vissza — minden gyakorlatnak van könnyebb változata.',
+  'Kezdő vagy, vagy hosszabb kihagyás után térnél vissza. Minden gyakorlatnak van könnyebb változata.',
   'Nem csak jól akarsz kinézni, hanem hosszú távon erős, mozgékony és egészséges szeretnél maradni.',
   'Szeretnéd reggel letudni az edzést, és jólesik egy jó hangulatú csapat.',
   'Küzdősportot űzöl vagy űztél, és kiegészítő erő- és állóképességi edzést keresel.',
@@ -93,7 +93,7 @@ export default function MorningBoost() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mt-5 text-lg text-muted-foreground">
-                60 perces funkcionális csoportos edzés: erő, core, mobilitás és állóképesség — lendületes napindítás kis létszámú csoportban.
+                60 perces funkcionális csoportos edzés: erő, core, mobilitás és állóképesség. Lendületes napindítás kis létszámú csoportban.
               </p>
             </Reveal>
 
@@ -160,7 +160,7 @@ export default function MorningBoost() {
           <p className="mt-4 text-lg text-muted-foreground">
             A klasszikus, izomtömeg-növelésre épülő konditermi edzéssel szemben a Morning Boost több irányból fejleszti
             az egészségedet. Az erő mellett ugyanolyan fontos a mobilitás, a core, a mély tartóizmok és az
-            állóképesség — mert hosszú távon ezek együtt adják az erős, mozgékony és fájdalommentes testet.
+            állóképesség, mert hosszú távon ezek együtt adják az erős, mozgékony és fájdalommentes testet.
           </p>
         </Reveal>
 
@@ -181,7 +181,7 @@ export default function MorningBoost() {
         <Reveal delay={1}>
           <p className="mt-8 max-w-3xl rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-5 text-sm text-muted-foreground">
             <strong className="text-foreground">Miért az állóképesség is?</strong> A szív-érrendszeri edzettség (VO2max)
-            a hosszú, egészséges élet egyik legerősebb előrejelzője — erről sokat beszél{' '}
+            a hosszú, egészséges élet egyik legerősebb előrejelzője, erről sokat beszél{' '}
             <a
               href="https://www.cbsnews.com/news/dr-peter-attia-exercise-is-key-to-longevity-60-minutes"
               target="_blank"
@@ -199,7 +199,8 @@ export default function MorningBoost() {
             >
               Dr. Rhonda Patrick
             </a>{' '}
-            is. Ezért a köreinkben a pulzus is dolgozik, nem csak az izmok.
+            is. Ezért a köreinkben a pulzus is dolgozik, nem csak az izmok. Ha mélyebben érdekel a téma, jó szívvel
+            ajánlom Peter Attia <em>Végigélni – A hosszú élet tudományos alapjai</em> című könyvét.
           </p>
         </Reveal>
 
@@ -238,7 +239,7 @@ export default function MorningBoost() {
             <div>
               <p className="font-display text-base font-semibold"><em>„Kiotsuke, Rei!”</em> — meghajlással kezdünk és zárunk</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Judós hagyomány: minden edzést egy közös meghajlással nyitunk és ugyanúgy zárunk — a tisztelet és a fókusz pillanata.
+                Judós hagyomány: minden edzést egy közös meghajlással nyitunk és ugyanúgy zárunk: ez a tisztelet és a fókusz pillanata.
               </p>
             </div>
           </div>
@@ -280,7 +281,7 @@ export default function MorningBoost() {
               <p className="text-sm font-semibold uppercase tracking-wider text-accent">Belülről</p>
               <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Így néz ki egy reggel</h2>
               <p className="mt-3 text-muted-foreground">
-                Egy rövid videó a Morning Boostról — hogy lásd, mire számíthatsz, mielőtt eljössz.
+                Egy rövid videó a Morning Boostról, hogy lásd, mire számíthatsz, mielőtt eljössz.
               </p>
               <a
                 href={REEL_URL}
@@ -335,7 +336,7 @@ export default function MorningBoost() {
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">QR-kódos belépés</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  A részvételhez nem szükséges külön belépőt váltanod a terembe — egyedi QR-kóddal tudsz belépni, amelyet előzetes jelentkezés után kapsz meg.
+                  A részvételhez nem szükséges külön belépőt váltanod a terembe. Egyedi QR-kóddal tudsz belépni, amelyet előzetes jelentkezés után kapsz meg.
                 </p>
               </div>
             </Reveal>
@@ -385,7 +386,7 @@ export default function MorningBoost() {
               </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Gödtől és Sződligettől is pár percre autóval — kényelmesen elérhető a környező településekről is.
+                Gödtől és Sződligettől is pár percre autóval, így kényelmesen elérhető a környező településekről is.
                 Ingyenes parkolás a helyszínen.
               </p>
 

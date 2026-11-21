@@ -24,7 +24,7 @@ export default function OutdoorTraining() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mt-5 text-lg text-muted-foreground">
-                A kültéri edzés egyelőre szünetel. Ha érdekel, érdeklődj üzenetben — értesítelek, amint újraindul.
+                A kültéri edzés egyelőre szünetel. Ha érdekel, érdeklődj üzenetben, és értesítelek, amint újraindul.
               </p>
             </Reveal>
 
@@ -119,7 +119,7 @@ export default function OutdoorTraining() {
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">Felszerelés biztosítva</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Minden edzőfelszerelést biztosítok — törölközőt és folyadékot hozz magaddal.
+                  Minden edzőfelszerelést biztosítok, csak törölközőt és folyadékot hozz magaddal.
                 </p>
               </div>
             </Reveal>

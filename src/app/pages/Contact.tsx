@@ -10,7 +10,7 @@ export default function Contact() {
           Beszéljünk
         </h1>
         <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-          Írd le, milyen céljaid vannak, vagy egyeztetni szeretnél egy edzéssel kapcsolatban — emailben hamarosan visszajelzek.
+          Írd le, milyen céljaid vannak, vagy egyeztetni szeretnél egy edzéssel kapcsolatban. Emailben hamarosan visszajelzek.
         </p>
       </div>
 

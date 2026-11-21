@@ -119,7 +119,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Training <span className="bg-gradient-accent bg-clip-text text-transparent">Boost</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Székely Zoli — személyi edző<br />
+              Székely Zoli, személyi edző<br />
               Erő, mobilitás, stabilitás.
             </p>
           </div>

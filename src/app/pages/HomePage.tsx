@@ -86,7 +86,7 @@
     </p>
 
     <p>
-      Hiszek a kemény, de okosan felépített edzésben. Szeretek motiválni, kihívást adni, és kihozni az emberekből a maximumot — úgy, hogy közben végig biztonságosan és tudatosan haladunk. Számomra a siker nem csak a látványos eredményekben mérhető, hanem abban, amikor valaki erősebbé, magabiztosabbá és energikusabbá válik a mindennapokban.
+      Hiszek a kemény, de okosan felépített edzésben. Szeretek motiválni, kihívást adni, és kihozni az emberekből a maximumot úgy, hogy közben végig biztonságosan és tudatosan haladunk. Számomra a siker nem csak a látványos eredményekben mérhető, hanem abban, amikor valaki erősebbé, magabiztosabbá és energikusabbá válik a mindennapokban.
     </p>
   </div>
 </Reveal>

@@ -8,12 +8,12 @@ const APPROACH = [
   {
     icon: Layers,
     title: 'Nem csak gépek',
-    desc: 'A gépek mellett szabad súlyok, saját testsúlyos és core-erősítő gyakorlatok is — így az erő a mindennapi mozgásban is megjelenik.',
+    desc: 'A gépek mellett szabad súlyok, saját testsúlyos és core-erősítő gyakorlatok is, így az erő a mindennapi mozgásban is megjelenik.',
   },
   {
     icon: Target,
     title: 'Szakmailag felépített izomépítés',
-    desc: 'A célodhoz igazított fókusz: például farizom, felsőtest vagy teljes test — megfelelő volumennel, intenzitással és technikával.',
+    desc: 'A célodhoz igazított fókusz: például farizom, felsőtest vagy teljes test, megfelelő volumennel, intenzitással és technikával.',
   },
   {
     icon: ClipboardList,
@@ -27,7 +27,7 @@ const FOR_WHOM = [
   'Fontos neked, hogy valaki figyeljen a technikádra, és biztonságosan haladj.',
   'Kezdő vagy, és szeretnéd az alapokat rögtön jól megtanulni.',
   'Sérülés vagy hosszabb kihagyás után fokozatosan, kontrolláltan építkeznél újra.',
-  'Párban edzenétek — erre a páros edzés kedvezőbb megoldás.',
+  'Párban edzenétek: erre a páros edzés kedvezőbb megoldás.',
 ];
 
 const PLAN_FOR_WHOM = [
@@ -55,7 +55,7 @@ export default function PersonalTraining() {
             <Reveal delay={2}>
               <p className="mt-5 text-lg text-muted-foreground">
                 Ha egyéni figyelemre és személyre szabott fejlődésre van szükséged, a személyi edzés neked szól.
-                Izomépítés, korrekció, core erősítés, fittség fejlesztése — a fókuszt együtt határozzuk meg.
+                Izomépítés, korrekció, core erősítés, fittség fejlesztése: a fókuszt együtt határozzuk meg.
               </p>
             </Reveal>
 
@@ -74,7 +74,7 @@ export default function PersonalTraining() {
               <div className="absolute -inset-3 -z-10 rounded-3xl bg-gradient-accent opacity-25 blur-2xl"></div>
               <img
                 src={personalTrainingImage}
-                alt="Személyi edzés — funkcionális mozgás"
+                alt="Személyi edzés, funkcionális mozgás"
                 width={1000}
                 height={1229}
                 fetchPriority="high"
@@ -300,7 +300,7 @@ export default function PersonalTraining() {
               <h3 className="font-display text-xl font-semibold">Saját követő oldal a tervedhez</h3>
               <p className="mt-2 text-sm text-muted-foreground md:text-base">
                 Minden edzéstervhez saját, telefonon is kényelmesen használható oldalt kapsz. Látod rajta a heti
-                edzéseidet és a gyakorlatok videóit, és sorozatonként rögzítheted a súlyokat és az ismétléseket —
+                edzéseidet és a gyakorlatok videóit, és sorozatonként rögzítheted a súlyokat és az ismétléseket,
                 így pontosan látszik, hogyan fejlődsz, és a terv frissítésekor is erre építünk.
               </p>
               <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-accent">
@@ -318,7 +318,7 @@ export default function PersonalTraining() {
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">Farizom fókuszú női edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
-              Erős, formás farizom és stabil medence — célzott aktivációval és progresszív terheléssel.
+              Erős, formás farizom és stabil medence célzott aktivációval és progresszív terheléssel.
             </p>
           </div>
           <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
@@ -327,7 +327,7 @@ export default function PersonalTraining() {
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">Core-erősítő edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
-              Mély stabilizáló rendszer és funkcionális törzserő — a tartás, a teljesítmény és a sérülésmegelőzés alapja.
+              Mély stabilizáló rendszer és funkcionális törzserő: a tartás, a teljesítmény és a sérülésmegelőzés alapja.
             </p>
           </div>
           <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
@@ -336,7 +336,7 @@ export default function PersonalTraining() {
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">Férfi teljes testes edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
-              Komplex, izomépítő és erőfejlesztő program a teljes testre — kiegyensúlyozott, fenntartható felépítéssel.
+              Komplex, izomépítő és erőfejlesztő program a teljes testre, kiegyensúlyozott, fenntartható felépítéssel.
             </p>
           </div>
         </div>
@@ -346,7 +346,7 @@ export default function PersonalTraining() {
         </div>
 
         <p className="mt-10 text-sm text-muted-foreground">
-          <strong className="text-foreground">Ár:</strong> egyeztetés alapján — a terv hosszától és a közös alkalmak
+          <strong className="text-foreground">Ár:</strong> egyeztetés alapján, a terv hosszától és a közös alkalmak
           számától függ.
         </p>
 
@@ -365,7 +365,7 @@ export default function PersonalTraining() {
           <Reveal className="text-center">
             <h2 className="font-display text-3xl font-bold md:text-4xl">Vedd fel velem a kapcsolatot</h2>
             <p className="mt-2 text-muted-foreground">
-              Írd meg, mire szeretnél fókuszálni — emailben hamarosan jelentkezem.
+              Írd meg, mire szeretnél fókuszálni, és emailben hamarosan jelentkezem.
             </p>
           </Reveal>
 
