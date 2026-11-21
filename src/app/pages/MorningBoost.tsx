@@ -199,8 +199,10 @@ export default function MorningBoost() {
             >
               Dr. Rhonda Patrick
             </a>{' '}
-            is. Ezért a köreinkben a pulzus is dolgozik, nem csak az izmok. Ha mélyebben érdekel a téma, jó szívvel
-            ajánlom Peter Attia <em>Végigélni – A hosszú élet tudományos alapjai</em> című könyvét.
+            is. Ezért a köreinkben a pulzus is dolgozik, nem csak az izmok. Ha általában is érdekel, mitől
+            lesz hosszú és egészséges az élet, jó szívvel ajánlom Peter Attia{' '}
+            <em>Végigélni – A hosszú élet tudományos alapjai</em> című könyvét: a mozgás mellett a táplálkozásról, az
+            alvásról és a lelki egészségről is szól.
           </p>
         </Reveal>
 
