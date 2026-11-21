@@ -1,8 +1,37 @@
-import { ArrowRight, Clock, MapPin, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
+import { ArrowRight, ChevronDown, Clock, Instagram, MapPin, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
 import morningBoostImage from '../../assets/img/mb-oldal.webp';
+
+const REEL_URL = 'https://www.instagram.com/reel/DfmBH39ND1U/';
+
+const FAQ = [
+  {
+    q: 'Kezdőként is jöhetek?',
+    a: 'Igen. A gyakorlatoknak van könnyebb és nehezebb változata, így mindenki a saját szintjén, biztonságosan dolgozhat. Ha van sérülésed vagy panaszod, a jelentkezésnél írd meg.',
+  },
+  {
+    q: 'Mit hozzak magammal?',
+    a: 'Kényelmes sportruházatot, folyadékot és törölközőt. Szűrt víz a teremben is van.',
+  },
+  {
+    q: 'Lehet zuhanyozni edzés után?',
+    a: 'Igen, a teremben van zuhanyzó, így edzés után akár egyenesen indulhatsz dolgozni.',
+  },
+  {
+    q: 'Hány fős egy csoport?',
+    a: 'Általában 6–12 fő, így mindenkire jut figyelem.',
+  },
+  {
+    q: 'Előre kell jelentkezni?',
+    a: 'Igen, az első alkalom előtt jelentkezz az oldal alján lévő űrlapon. Utána emailben visszaigazolom a részleteket, és megkapod a belépéshez szükséges QR-kódot.',
+  },
+  {
+    q: 'Mi van, ha mégsem tudok jönni?',
+    a: 'Semmi gond, csak jelezd minél előbb üzenetben vagy telefonon, hogy tudjak tervezni.',
+  },
+];
 
 export default function MorningBoost() {
   return (
@@ -125,6 +154,38 @@ export default function MorningBoost() {
             </Reveal>
           ))}
         </ol>
+
+        <Reveal className="mt-14">
+          <div className="grid items-center gap-8 md:grid-cols-[1fr_minmax(0,400px)]">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-accent">Belülről</p>
+              <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Így néz ki egy reggel</h2>
+              <p className="mt-3 text-muted-foreground">
+                Egy rövid videó a Morning Boostról — hogy lásd, mire számíthatsz, mielőtt eljössz.
+              </p>
+              <a
+                href={REEL_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+              >
+                <Instagram className="h-4 w-4" />
+                Megnézem az Instagramon
+              </a>
+            </div>
+            <div className="mx-auto w-full max-w-[400px] overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+              <iframe
+                src={`${REEL_URL}embed`}
+                title="Morning Boost videó az Instagramon"
+                loading="lazy"
+                className="block h-[640px] w-full"
+                style={{ border: 0 }}
+                scrolling="no"
+                allow="encrypted-media"
+              />
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       <section className="relative overflow-hidden border-y border-border bg-secondary/50">
@@ -234,6 +295,24 @@ export default function MorningBoost() {
             </div>
           </Reveal>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 py-20">
+        <Reveal>
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent">GYIK</p>
+          <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Gyakori kérdések</h2>
+        </Reveal>
+        <Reveal delay={1} className="mt-8 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+          {FAQ.map((item) => (
+            <details key={item.q} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <p className="px-6 pb-5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+            </details>
+          ))}
+        </Reveal>
       </section>
 
       <section id="apply" className="mx-auto max-w-3xl px-4 pb-24 scroll-mt-20">

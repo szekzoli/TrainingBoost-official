@@ -62,16 +62,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {n.label}
               </Link>
             ))}
-            <a
-              href="/morning-boost#apply"
+            <Link
+              to="/morning-boost#apply"
               className="rounded-full bg-gradient-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-soft)] transition hover:shadow-[var(--shadow-glow)]"
             >
               Jelentkezem
-            </a>
+            </Link>
           </nav>
           <button
             className="md:hidden"
             aria-label="Menü"
+            aria-expanded={open}
+            aria-controls="mobil-menu"
             onClick={() => setOpen((o) => !o)}
           >
             {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -83,7 +85,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             open ? "block" : "hidden",
           )}
         >
-          <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+          <nav id="mobil-menu" className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
             {nav.map((n) => (
               <Link
                 key={n.to}
@@ -97,6 +99,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {n.label}
               </Link>
             ))}
+            <Link
+              to="/morning-boost#apply"
+              onClick={() => setOpen(false)}
+              className="mt-2 rounded-full bg-gradient-accent px-4 py-2.5 text-center text-sm font-semibold text-accent-foreground shadow-[var(--shadow-soft)]"
+            >
+              Jelentkezem
+            </Link>
           </nav>
         </div>
       </header>

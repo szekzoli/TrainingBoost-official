@@ -1,4 +1,4 @@
-import { CircleCheck, ArrowRight, MapPin, Wallet, Ticket } from 'lucide-react';
+import { CircleCheck, ArrowRight, MapPin, Wallet, Ticket, Users, Flame, Target, Dumbbell } from 'lucide-react';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
 import personalTrainingImage from '../../assets/img/szemelyi-oldal.webp';
@@ -184,10 +184,12 @@ export default function PersonalTraining() {
             <Reveal delay={4}>
               <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
-                  <Wallet className="h-5 w-5" />
+                  <Users className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">Páros edzés</h3>
-                <p className="mt-2 font-semibold">13 000 Ft</p>
+                <p className="mt-2 font-semibold">
+                  13 000 Ft <span className="font-normal text-muted-foreground">/ alkalom, 2 főre</span>
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Két fő részére tervezett edzés, személyre szabott programmal és közös haladással.
                 </p>
@@ -211,7 +213,7 @@ export default function PersonalTraining() {
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <span className="text-xl">1</span>
+              <Flame className="h-5 w-5" />
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">Farizom fókuszú női edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -221,7 +223,7 @@ export default function PersonalTraining() {
 
           <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <span className="text-xl">2</span>
+              <Target className="h-5 w-5" />
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">CORE erősítő edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -231,7 +233,7 @@ export default function PersonalTraining() {
 
           <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <span className="text-xl">3</span>
+              <Dumbbell className="h-5 w-5" />
             </div>
             <h3 className="mt-6 font-display text-xl font-semibold">Férfi teljes testes edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -261,7 +263,12 @@ export default function PersonalTraining() {
           </div>
         </div>
 
-        <div className="mt-10">
+        <p className="mt-8 text-sm text-muted-foreground">
+          <strong className="text-foreground">Ár:</strong> egyeztetés alapján — a terv hosszától és a közös alkalmak
+          számától függ.
+        </p>
+
+        <div className="mt-6">
           <a
             href="#apply"
             className="inline-flex rounded-full bg-gradient-accent px-8 py-3.5 text-base font-semibold text-accent-foreground shadow-[var(--shadow-elegant)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]"

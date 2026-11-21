@@ -1,10 +1,9 @@
   import { Sparkles, ArrowRight, Instagram, Dumbbell, Target, Activity, Footprints, ArrowUpRight } from 'lucide-react';
   import { Link } from 'react-router-dom';
   import { Reveal } from '../components/Reveal';
-  import heroImage from '../../imports/zoli-hero.webp';
+  import heroImage from '../../assets/img/zoli-hero.webp';
   import morningBoostImage from '../../assets/img/mb-kartya.webp';
   import personalTrainingImage from '../../assets/img/szemelyi-kartya.webp';
-  import outdoorBoostImage from '../../assets/img/outdoor.webp';
 
   export default function HomePage() {
     return (
@@ -166,10 +165,10 @@
             </h2>
           </Reveal>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
             <Reveal delay={1}>
               <Link to="/morning-boost" className="group block h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-[4/3] overflow-hidden md:aspect-[16/10]">
                   <img
                     src={morningBoostImage}
                     alt="Morning Boost"
@@ -196,7 +195,7 @@
 
             <Reveal delay={2}>
               <Link to="/personal-training" className="group block h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-[4/3] overflow-hidden md:aspect-[16/10]">
                   <img
                     src={personalTrainingImage}
                     alt="Személyi edzés"
@@ -204,7 +203,7 @@
                     height={1196}
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                    className="h-full w-full object-cover object-[center_15%] transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80"></div>
                 </div>
@@ -221,32 +220,6 @@
               </Link>
             </Reveal>
 
-            <Reveal delay={3}>
-              <Link to="/outdoor-training" className="group block h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-glow)]">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={outdoorBoostImage}
-                    alt="Outdoor Boost"
-                    width={1000}
-                    height={1310}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80"></div>
-                </div>
-                <div className="p-6">
-                  <h3 className="font-display text-xl font-semibold">Outdoor Boost</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Kültéri csoportos edzés Gödön.
-                  </p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent transition group-hover:gap-2">
-                    Részletek
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </div>
-              </Link>
-            </Reveal>
           </div>
         </section>
 
