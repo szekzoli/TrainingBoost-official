@@ -5,6 +5,7 @@ import { api, errorMessage, type ClientRow, type ClientWorkout, type PlanSummary
 import { DueBadge, ProgressCell, fmtDay, relDays } from '../components/ClientBits';
 import { btn } from '../lib/util';
 import { EditClientDialog } from './Clients';
+import SummaryTable from '../components/SummaryTable';
 
 export const RATING_LABELS = ['', 'nagyon könnyű', 'könnyű', 'pont jó', 'nehéz', 'nagyon nehéz'];
 
@@ -119,7 +120,7 @@ export default function ClientDetail() {
   const [workouts, setWorkouts] = useState<ClientWorkout[] | null>(null);
   const [plans, setPlans] = useState<PlanSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'workouts' | 'exercises'>('workouts');
+  const [tab, setTab] = useState<'workouts' | 'exercises' | 'summary'>('workouts');
   const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
@@ -216,9 +217,14 @@ export default function ClientDetail() {
           <button type="button" role="tab" aria-selected={tab === 'exercises'} className={tabClass(tab === 'exercises')} onClick={() => setTab('exercises')}>
             Gyakorlatonként ({exercises.length})
           </button>
+          <button type="button" role="tab" aria-selected={tab === 'summary'} className={tabClass(tab === 'summary')} onClick={() => setTab('summary')}>
+            Összesítő
+          </button>
         </div>
 
-        {tab === 'workouts' ? (
+        {tab === 'summary' ? (
+          <SummaryTable planId={client.plan_id} clientLabel={client.label} workouts={workouts} />
+        ) : tab === 'workouts' ? (
           workouts.length === 0 ? (
             <p className="mt-4 text-sm text-muted">Még nincs naplózott edzés.</p>
           ) : (

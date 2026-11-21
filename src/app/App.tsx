@@ -22,6 +22,7 @@ const AppSettings = lazy(() => import('./pages/AppSettings'));
 const AppCalendar = lazy(() => import('./pages/AppCalendar'));
 const AppProgress = lazy(() => import('./pages/AppProgress'));
 const AppProgram = lazy(() => import('./pages/AppProgram'));
+const AppSummary = lazy(() => import('./pages/AppSummary'));
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="e/:week/:day/:dayExerciseId" element={<Suspense fallback={null}><AppExercise /></Suspense>} />
           <Route path="print/:week" element={<Suspense fallback={null}><AppPrint /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={null}><AppSettings /></Suspense>} />
+          <Route path="osszesito" element={<Suspense fallback={null}><AppSummary /></Suspense>} />
           <Route path="program" element={<Suspense fallback={null}><AppProgram /></Suspense>} />
           <Route path="naptar" element={<Suspense fallback={null}><AppCalendar /></Suspense>} />
           <Route path="haladas" element={<Suspense fallback={null}><AppProgress /></Suspense>} />

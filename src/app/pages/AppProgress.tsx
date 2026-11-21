@@ -1,6 +1,6 @@
 // Haladás: gyakorlatonként az eddigi eredmények (legjobb sorozat, alkalmak, grafikon).
 import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Table2, Trophy } from 'lucide-react';
 import type { PlanData, SetLog, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { formatSet, isSetDone } from '../components/app/plan-utils';
@@ -188,6 +188,18 @@ export default function AppProgress() {
             : `${all.length} gyakorlat · ${totalSets} rögzített sorozat`}
         </p>
       </div>
+
+      <Link
+        to="/app/osszesito"
+        className="flex min-h-14 items-center gap-3 rounded-[14px] border border-app-teal/40 bg-app-mint px-4 py-3"
+      >
+        <Table2 className="size-5 shrink-0 text-app-ink" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Összesítő táblázat</span>
+          <span className="block text-xs text-app-muted">Hetek egymás mellett · Excel, megosztás, nyomtatás</span>
+        </span>
+        <ChevronRight className="size-4 shrink-0 text-app-navy/50" />
+      </Link>
 
       {all.length > 0 && (
         <ul className="space-y-2">
