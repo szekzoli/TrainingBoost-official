@@ -1,6 +1,7 @@
   import { Sparkles, ArrowRight, Instagram, Dumbbell, Target, Activity, Footprints, ArrowUpRight } from 'lucide-react';
   import { Link } from 'react-router-dom';
   import { Reveal } from '../components/Reveal';
+  import { ServiceChooser } from '../components/ServiceChooser';
   import heroImage from '../../assets/img/zoli-hero.webp';
   import morningBoostImage from '../../assets/img/mb-kartya.webp';
   import personalTrainingImage from '../../assets/img/szemelyi-kartya.webp';
@@ -222,6 +223,8 @@
 
           </div>
         </section>
+
+        <ServiceChooser />
 
         <section className="mx-auto max-w-6xl px-4 py-20">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
