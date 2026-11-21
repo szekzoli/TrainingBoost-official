@@ -1,16 +1,34 @@
+import { useState } from 'react';
 import { Printer } from 'lucide-react';
 import type { PlanFull } from '../api';
+import ProgramCompact from '../components/ProgramCompact';
 import { groupTags, sectionsOf } from '../lib/blocks';
 import { btnGhost } from '../lib/util';
 
 // Csak olvasható, tömör áttekintő a teljes tervről; nyomtatható (a böngésző "Nyomtatás / Mentés PDF-ként" funkciójával).
 export default function Overview({ data }: { data: PlanFull }) {
   const weeks = [...new Set(data.days.map((d) => d.week))].sort((a, b) => a - b);
+  // Program: minden nap egyszer (az első hét szerint, a későbbi gyakorlatváltozások jelölésével); Hetenként: minden hét külön.
+  const [mode, setMode] = useState<'program' | 'weeks'>('program');
+  const seg = (on: boolean) =>
+    `h-9 px-4 text-sm font-semibold ${on ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-canvas'}`;
 
   return (
     <div>
-      <div className="flex items-center gap-4 print:hidden">
-        <p className="mr-auto text-sm text-muted">Csak olvasható összefoglaló. Szerkeszteni a Szerkesztés fülön lehet.</p>
+      <div className="flex flex-wrap items-center gap-4 print:hidden">
+        <div className="inline-flex overflow-hidden rounded-[10px] border border-line" role="group" aria-label="Nézet">
+          <button type="button" className={seg(mode === 'program')} aria-pressed={mode === 'program'} onClick={() => setMode('program')}>
+            Program
+          </button>
+          <button type="button" className={`${seg(mode === 'weeks')} border-l border-line`} aria-pressed={mode === 'weeks'} onClick={() => setMode('weeks')}>
+            Hetenként
+          </button>
+        </div>
+        <p className="mr-auto text-sm text-muted">
+          {mode === 'program'
+            ? `Heti ${new Set(data.days.map((d) => d.day)).size} nap, ${weeks.length} hét. A napok az első hét szerint; a későbbi gyakorlatváltozás jelölve.`
+            : 'Csak olvasható összefoglaló. Szerkeszteni a Szerkesztés fülön lehet.'}
+        </p>
         <button type="button" className={`${btnGhost} inline-flex items-center gap-2`} onClick={() => window.print()}>
           <Printer className="size-4" /> Nyomtatás
         </button>
@@ -21,9 +39,15 @@ export default function Overview({ data }: { data: PlanFull }) {
         {data.plan.description && <p className="text-sm">{data.plan.description}</p>}
       </div>
 
-      {weeks.length === 0 && <p className="mt-6 text-sm text-muted">A tervnek még nincs egyetlen napja sem.</p>}
+      {mode === 'program' && (
+        <div className="mt-6">
+          <ProgramCompact days={data.days} />
+        </div>
+      )}
 
-      {weeks.map((w) => (
+      {mode === 'weeks' && weeks.length === 0 && <p className="mt-6 text-sm text-muted">A tervnek még nincs egyetlen napja sem.</p>}
+
+      {mode === 'weeks' && weeks.map((w) => (
         <section key={w} className="mt-6">
           <h2 className="mb-2 text-lg font-bold">{w}. hét</h2>
           <div className="space-y-4">

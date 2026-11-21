@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import ExerciseMedia from '../components/app/ExerciseMedia';
@@ -8,6 +8,8 @@ import { formatSet, previousSets } from '../components/app/plan-utils';
 export default function AppExercise() {
   const { week, day, dayExerciseId } = useParams();
   const { plan, logs } = useSession();
+  // A program-áttekintőből érkezve oda vigyen vissza a vissza-link (és ne az edzésnapra).
+  const fromProgram = (useLocation().state as { from?: string } | null)?.from === '/app/program';
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
   const item = planDay?.exercises.find((e) => e.id === dayExerciseId);
 
@@ -33,10 +35,10 @@ export default function AppExercise() {
     <div className="space-y-5">
       <div>
         <Link
-          to={`/app/d/${planDay.week}/${planDay.day}`}
+          to={fromProgram ? '/app/program' : `/app/d/${planDay.week}/${planDay.day}`}
           className="-ml-1 inline-flex min-h-11 items-center pr-3 text-sm text-app-navy/70"
         >
-          <ChevronLeft className="size-4" /> {planDay.title ?? `${planDay.day}. edzés`}
+          <ChevronLeft className="size-4" /> {fromProgram ? 'A program' : (planDay.title ?? `${planDay.day}. edzés`)}
         </Link>
         {item.section && <p className={`mt-1 ${sectionTitle}`}>{item.section}</p>}
         <h1 className="mt-1 text-2xl font-bold leading-tight">{item.exercise.name}</h1>

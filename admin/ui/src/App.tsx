@@ -7,6 +7,7 @@ import ClientDetail from './pages/ClientDetail';
 import Dashboard from './pages/Dashboard';
 import PlanEditor from './pages/PlanEditor';
 import Plans from './pages/Plans';
+import TemplatesOverview from './pages/TemplatesOverview';
 
 const NAV = [
   { to: '/attekintes', label: 'Áttekintés' },
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/attekintes" element={<Dashboard />} />
             <Route path="/tervek" element={<Plans key="plans" templates={false} />} />
             <Route path="/sablonok" element={<Plans key="templates" templates />} />
+            <Route path="/sablonok/attekintes" element={<TemplatesOverview />} />
             <Route path="/terv/:id" element={<PlanEditor />} />
             <Route path="/gyakorlattar" element={<Exercises />} />
             <Route path="/ugyfelek" element={<Clients />} />

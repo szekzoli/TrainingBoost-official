@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, Check, ChevronRight, TrendingUp } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, ClipboardList, TrendingUp } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone, weeksOf } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
@@ -79,7 +79,13 @@ export default function AppHome() {
         )}
       </section>
 
-      <section className="grid grid-cols-2 gap-2">
+      <Link to="/app/program" className="flex min-h-14 items-center gap-3 border border-app-navy/15 px-4 active:bg-app-navy/5">
+        <ClipboardList className="size-5 text-app-teal" />
+        <span className="flex-1 font-semibold">A program áttekintése</span>
+        <ChevronRight className="size-4 text-app-navy/50" />
+      </Link>
+
+      <section className="-mt-4 grid grid-cols-2 gap-2">
         <Link to="/app/naptar" className="flex min-h-14 items-center gap-3 border border-app-navy/15 px-4 active:bg-app-navy/5">
           <CalendarDays className="size-5 text-app-teal" />
           <span className="font-semibold">Naptár</span>

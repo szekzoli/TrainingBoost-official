@@ -263,6 +263,11 @@ export default function Plans({ templates }: { templates: boolean }) {
     <div>
       <div className="flex flex-wrap items-center gap-4">
         <h1 className="mr-auto text-2xl font-bold">{templates ? 'Sablonok' : 'Tervek'}</h1>
+        {templates && (
+          <Link to="/sablonok/attekintes" className={`${btn} inline-flex items-center`}>
+            Összes sablon áttekintése
+          </Link>
+        )}
         <button type="button" className={btnPrimary} onClick={() => setCreating(true)}>
           {templates ? 'Új üres sablon' : 'Új üres terv'}
         </button>
@@ -316,6 +321,9 @@ export default function Plans({ templates }: { templates: boolean }) {
                   <td className="px-4 py-3 text-right tabular-nums">{p.client_count}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap justify-end gap-2">
+                      <Link to={`/terv/${p.id}?nezet=attekinto`} className={`${btn} inline-flex items-center`}>
+                        Áttekintés
+                      </Link>
                       <Link to={`/terv/${p.id}`} className={`${btn} inline-flex items-center`}>
                         Szerkesztés
                       </Link>

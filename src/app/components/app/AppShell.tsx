@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
-import { CalendarDays, Settings, TrendingUp } from 'lucide-react';
+import { CalendarDays, ClipboardList, Settings, TrendingUp } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
 import { RestTimerProvider } from './RestTimer';
@@ -204,6 +204,9 @@ function Frame() {
             <nav className="flex items-center gap-1" aria-label="Fő menü">
               {status === 'ready' && (
                 <>
+                  <HeaderLink to="/app/program" label="Program áttekintése">
+                    <ClipboardList className="size-5" />
+                  </HeaderLink>
                   <HeaderLink to="/app/naptar" label="Naptár">
                     <CalendarDays className="size-5" />
                   </HeaderLink>

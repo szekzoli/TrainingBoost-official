@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { api, errorMessage, type PlanDay, type PlanFull, type PlanRow, type Scope } from '../api';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -238,7 +238,8 @@ export default function PlanEditor() {
   const { id = '' } = useParams();
   const [data, setData] = useState<PlanFull | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'edit' | 'overview'>('edit');
+  const [search] = useSearchParams();
+  const [tab, setTab] = useState<'edit' | 'overview'>(search.get('nezet') === 'attekinto' ? 'overview' : 'edit');
   const [week, setWeek] = useState<number | null>(null);
   const [dayNo, setDayNo] = useState<number | null>(null);
   const [scope, setScope] = useState<Scope>('this');
