@@ -63,7 +63,7 @@ export default function Privacy() {
         <Row label="Kezelt adatok">
           név, e-mail-cím, telefonszám (nem kötelező), az üzenet szövege, a választott edzésalkalom
         </Row>
-        <Row label="Cél">a megkeresés megválaszolása, a jelentkezés visszaigazolása és az edzés megszervezése</Row>
+        <Row label="Cél">a megkeresés megválaszolása, a jelentkezés (automatikus e-mailes) visszaigazolása és az edzés megszervezése</Row>
         <Row label="Jogalap">
           a szerződés megkötését megelőző, a kérésedre tett lépések (GDPR 6. cikk (1) b) pont)
         </Row>
@@ -73,7 +73,8 @@ export default function Privacy() {
         </Row>
         <Row label="Adatfeldolgozók">
           Netlify, Inc. (az űrlap fogadása és a weboldal tárhelye, USA; az EU általános szerződési feltételei alapján);
-          Google Ireland Ltd. (e-mail-fiók, amelybe az értesítés érkezik)
+          Google Ireland Ltd. (e-mail-fiók, amelybe az értesítés érkezik); Resend, Inc. (az automatikus visszaigazoló
+          e-mail kiküldése, USA; az EU általános szerződési feltételei alapján)
         </Row>
       </dl>
       <p>
