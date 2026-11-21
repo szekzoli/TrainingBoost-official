@@ -1,10 +1,53 @@
-import { ArrowRight, ChevronDown, Clock, Instagram, MapPin, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
+import { ArrowRight, ChevronDown, Clock, ExternalLink, HeartPulse, Instagram, MapPin, MessageCircle, Move, QrCode, RefreshCw, ShieldCheck, Shuffle, Sparkles, Sunrise, Tag, Ticket, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
+import { ForWhom } from '../components/ForWhom';
 import morningBoostImage from '../../assets/img/mb-oldal.webp';
 
 const REEL_URL = 'https://www.instagram.com/reel/DfmBH39ND1U/';
+
+const PILLARS = [
+  {
+    icon: Shuffle,
+    title: 'Változatos mozgásminták',
+    desc: 'Guggolás, csípőhajlítás, tolás, húzás, forgatás, cipelés — szabad súllyal, kettlebell-lel, TRX-szel és saját testsúllyal, különböző terhelésekkel.',
+  },
+  {
+    icon: Move,
+    title: 'Teljes mozgástartomány',
+    desc: 'Nagy mozgástartományú gyakorlatok és mobilizálás, hogy a csípőd, a vállad és a gerinced szabadon és fájdalom nélkül mozogjon.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Erős mélyizmok',
+    desc: 'Core- és farizom-erősítés minden edzésen: ez tartja a derekat és a hátat, és sokat segít az ülőmunkával járó panaszok megelőzésében.',
+  },
+  {
+    icon: HeartPulse,
+    title: 'Erő-állóképesség és szív',
+    desc: 'Köredzés, ahol a pulzus is felmegy: az erő mellett az állóképességed és a VO2max-od is fejlődik.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Küzdősportos gyakorlatok',
+    desc: 'Szokatlan, judo- és birkózóedzéseken használt gyakorlatok, amelyek az egész testet és a koordinációt is megdolgoztatják.',
+  },
+  {
+    icon: Sunrise,
+    title: 'Közösségben, reggel',
+    desc: 'Együtt könnyebb felkelni és kitartani. Mire a nap elindul, az edzésed már megvan.',
+  },
+];
+
+const FOR_WHOM = [
+  'Ülőmunkát végzel, és érzed a derekadon, a hátadon vagy a csípődön.',
+  'Elég volt a gépsorokból, és változatosabb, élvezetesebb edzést keresel.',
+  'Kezdő vagy, vagy hosszabb kihagyás után térnél vissza — minden gyakorlatnak van könnyebb változata.',
+  'Nem csak jól akarsz kinézni, hanem hosszú távon erős, mozgékony és egészséges szeretnél maradni.',
+  'Szeretnéd reggel letudni az edzést, és jólesik egy jó hangulatú csapat.',
+  'Küzdősportot űzöl vagy űztél, és kiegészítő erő- és állóképességi edzést keresel.',
+];
 
 const FAQ = [
   {
@@ -72,6 +115,14 @@ export default function MorningBoost() {
                     <strong className="text-foreground">Black Door Fitness</strong>, Vác
                   </p>
                 </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                    <Tag className="h-4 w-4 text-accent" />
+                  </div>
+                  <p className="text-sm">
+                    <strong className="text-foreground">Az első alkalom féláron:</strong> 2 000 Ft
+                  </p>
+                </div>
               </div>
             </Reveal>
 
@@ -102,7 +153,75 @@ export default function MorningBoost() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 py-20">
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <Reveal className="max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent">A Morning Boost filozófiája</p>
+          <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Nem csak súlyt emelünk</h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            A klasszikus, izomtömeg-növelésre épülő konditermi edzéssel szemben a Morning Boost több irányból fejleszti
+            az egészségedet. Az erő mellett ugyanolyan fontos a mobilitás, a core, a mély tartóizmok és az
+            állóképesség — mert hosszú távon ezek együtt adják az erős, mozgékony és fájdalommentes testet.
+          </p>
+        </Reveal>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {PILLARS.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} delay={((i % 3) + 1) as 1 | 2 | 3}>
+              <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={1}>
+          <p className="mt-8 max-w-3xl rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-5 text-sm text-muted-foreground">
+            <strong className="text-foreground">Miért az állóképesség is?</strong> A szív-érrendszeri edzettség (VO2max)
+            a hosszú, egészséges élet egyik legerősebb előrejelzője — erről sokat beszél{' '}
+            <a
+              href="https://www.cbsnews.com/news/dr-peter-attia-exercise-is-key-to-longevity-60-minutes"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Dr. Peter Attia
+            </a>{' '}
+            és{' '}
+            <a
+              href="https://www.foundmyfitness.com/episodes/exercise-powerful-longevity-drug"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Dr. Rhonda Patrick
+            </a>{' '}
+            is. Ezért a köreinkben a pulzus is dolgozik, nem csak az izmok.
+          </p>
+        </Reveal>
+
+        <div className="mt-20">
+          <ForWhom
+            items={FOR_WHOM}
+            notFor={{
+              text: 'Ha kifejezetten izomtömeg-növelő, testépítő programot keresel, arra a',
+              hint: (
+                <>
+                  <Link to="/personal-training" className="font-medium text-foreground underline underline-offset-4">
+                    személyi edzés vagy egy egyéni edzésterv
+                  </Link>{' '}
+                  jobb választás.
+                </>
+              ),
+            }}
+          />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-20">
         <Reveal className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">Az edzés felépítése</p>
           <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Így épül fel egy alkalom</h2>
@@ -196,7 +315,19 @@ export default function MorningBoost() {
             <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">Mielőtt jössz</h2>
           </Reveal>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            <Reveal delay={1}>
+              <div className="h-full rounded-2xl border border-dashed border-accent/50 bg-accent/5 p-6 shadow-[var(--shadow-soft)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
+                  <Tag className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold">Első alkalom: 2 000 Ft</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Próbáld ki féláron, és nézd meg, neked való-e. Ez is tartalmazza a terembe lépést.
+                </p>
+              </div>
+            </Reveal>
+
             <Reveal delay={1}>
               <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">

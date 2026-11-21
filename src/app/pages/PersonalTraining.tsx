@@ -1,7 +1,41 @@
-import { CircleCheck, ArrowRight, MapPin, Wallet, Ticket, Users, Flame, Target, Dumbbell } from 'lucide-react';
+import { CircleCheck, ArrowRight, MapPin, Wallet, Ticket, Users, Flame, Target, Dumbbell, ClipboardList, Smartphone, LineChart, Layers } from 'lucide-react';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
+import { ForWhom } from '../components/ForWhom';
 import personalTrainingImage from '../../assets/img/szemelyi-oldal.webp';
+
+const APPROACH = [
+  {
+    icon: Layers,
+    title: 'Nem csak gépek',
+    desc: 'A gépek mellett szabad súlyok, saját testsúlyos és core-erősítő gyakorlatok is — így az erő a mindennapi mozgásban is megjelenik.',
+  },
+  {
+    icon: Target,
+    title: 'Szakmailag felépített izomépítés',
+    desc: 'A célodhoz igazított fókusz: például farizom, felsőtest vagy teljes test — megfelelő volumennel, intenzitással és technikával.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Terv alapján haladunk',
+    desc: 'Nem napi rögtönzött gyakorlatok: edzésterv szerint dolgozunk, mérhető progresszióval.',
+  },
+];
+
+const FOR_WHOM = [
+  'Konkrét célod van: izomépítés, formásabb farizom, erősebb felsőtest vagy jobb általános erőnlét.',
+  'Fontos neked, hogy valaki figyeljen a technikádra, és biztonságosan haladj.',
+  'Kezdő vagy, és szeretnéd az alapokat rögtön jól megtanulni.',
+  'Sérülés vagy hosszabb kihagyás után fokozatosan, kontrolláltan építkeznél újra.',
+  'Párban edzenétek — erre a páros edzés kedvezőbb megoldás.',
+];
+
+const PLAN_FOR_WHOM = [
+  'Már magabiztosan edzel egyedül, de úgy érzed, eddig csapongtál a gyakorlatok között.',
+  'Nem látod a fejlődést, vagy úgy érzed, nem elég hatékony, amit csinálsz.',
+  'Monoton lett az edzés, és unod a megszokott gyakorlatokat.',
+  'Szeretnéd, hogy szakmai alapokon álló terv legyen az edzéseid mögött.',
+];
 
 export default function PersonalTraining() {
   return (
@@ -48,6 +82,34 @@ export default function PersonalTraining() {
               />
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pt-20">
+        <Reveal className="max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Hogyan dolgozom</p>
+          <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">A célodhoz igazítva, szakmai alapon</h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            A személyi edzést mindig a céljaidhoz alakítjuk. Közben abban hiszek, hogy az erős, egészséges test többet
+            kíván a gépeken végzett ismétléseknél.
+          </p>
+        </Reveal>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {APPROACH.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} delay={(i + 1) as 1 | 2 | 3}>
+              <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="mt-20">
+          <ForWhom items={FOR_WHOM} />
         </div>
       </section>
 
@@ -200,18 +262,57 @@ export default function PersonalTraining() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-20">
-        <Reveal>
+        <Reveal className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">Edzésterv készítés</p>
           <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">
-            Személyre szabott edzésterv — a céljaidhoz igazítva
+            Személyre szabott edzésterv — önálló edzéshez
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Egy alapos konzultáció során átbeszéljük a céljaidat, a jelenlegi formádat és a hétköznapjaidat. Ennek alapján készítem el a személyre szabott edzéstervedet, amit szükség esetén egy közös, személyes alkalom keretében veszünk át — hogy a technika és a terhelés is biztosan a helyén legyen.
+            Ha egyedül edzel, de szeretnéd, hogy szakmailag átgondolt terv legyen mögötte: a célodhoz igazított,
+            gondosan kiválasztott gyakorlatokból álló edzéstervet készítek, amelyet időszakonként frissítünk, hogy
+            folyamatosan fejlődj.
           </p>
         </Reveal>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { n: '1', t: 'Konzultáció', d: 'Átbeszéljük a célodat, a jelenlegi formádat, az eddigi edzéseidet és azt, mennyi időd van.' },
+            { n: '2', t: 'A terv elkészítése', d: 'Kiválasztott gyakorlatok, hetekre bontva, sorozatokkal, ismétlésekkel és súlyokkal.' },
+            { n: '3', t: 'Közös átvétel', d: 'Egy személyes alkalmon végigmegyünk a gyakorlatokon, hogy a technika és a terhelés a helyén legyen.' },
+            { n: '4', t: 'Követés és frissítés', d: 'Rögzíted, mit csináltál, és ez alapján időszakonként frissítjük a tervet.' },
+          ].map((step, i) => (
+            <Reveal key={step.n} delay={(i + 1) as 1 | 2 | 3 | 4}>
+              <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+                <div className="font-display text-3xl font-bold text-accent/70">{step.n}</div>
+                <h3 className="mt-2 font-display text-lg font-semibold">{step.t}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{step.d}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={1}>
+          <div className="mt-6 grid gap-6 rounded-3xl border border-accent/30 bg-accent/5 p-6 md:grid-cols-[auto_1fr] md:items-center md:p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-accent text-accent-foreground">
+              <Smartphone className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-display text-xl font-semibold">Saját követő oldal a tervedhez</h3>
+              <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                Minden edzéstervhez saját, telefonon is kényelmesen használható oldalt kapsz. Látod rajta a heti
+                edzéseidet és a gyakorlatok videóit, és sorozatonként rögzítheted a súlyokat és az ismétléseket —
+                így pontosan látszik, hogyan fejlődsz, és a terv frissítésekor is erre építünk.
+              </p>
+              <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-accent">
+                <LineChart className="h-4 w-4" /> Követhető, mérhető fejlődés
+              </p>
+            </div>
+          </div>
+        </Reveal>
+
+        <p className="mt-10 font-display text-lg font-semibold">Milyen tervek készülnek például?</p>
+        <div className="mt-4 grid gap-6 lg:grid-cols-3">
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               <Flame className="h-5 w-5" />
             </div>
@@ -220,18 +321,16 @@ export default function PersonalTraining() {
               Erős, formás farizom és stabil medence — célzott aktivációval és progresszív terheléssel.
             </p>
           </div>
-
-          <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               <Target className="h-5 w-5" />
             </div>
-            <h3 className="mt-6 font-display text-xl font-semibold">CORE erősítő edzésterv</h3>
+            <h3 className="mt-6 font-display text-xl font-semibold">Core-erősítő edzésterv</h3>
             <p className="mt-3 text-sm text-muted-foreground">
               Mély stabilizáló rendszer és funkcionális törzserő — a tartás, a teljesítmény és a sérülésmegelőzés alapja.
             </p>
           </div>
-
-          <div className="group overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               <Dumbbell className="h-5 w-5" />
             </div>
@@ -242,28 +341,11 @@ export default function PersonalTraining() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <p className="font-semibold">Konzultáció</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Felmérjük a céljaidat, a hátteredet és a lehetőségeidet.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <p className="font-semibold">Progresszió</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Időszakosan frissített terv, hogy folyamatosan fejlődj.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <p className="font-semibold">Visszacsatolás</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Rendszeres konzultáció, finomhangolás a tapasztalatok alapján.
-            </p>
-          </div>
+        <div className="mt-16">
+          <ForWhom title="Kinek ajánlom az edzéstervet?" items={PLAN_FOR_WHOM} />
         </div>
 
-        <p className="mt-8 text-sm text-muted-foreground">
+        <p className="mt-10 text-sm text-muted-foreground">
           <strong className="text-foreground">Ár:</strong> egyeztetés alapján — a terv hosszától és a közös alkalmak
           számától függ.
         </p>
