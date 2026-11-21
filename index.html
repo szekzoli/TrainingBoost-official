@@ -1,42 +1,26 @@
-
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>TrainingBoost Official</title>
-      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
-      <!-- Google tag (gtag.js) -->
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-VH1HVL18W2"></script>
-      <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        // /app/t/<kod>: a titkos kód ne kerüljön a GA4-be (page_location / page_referrer)
-        (function () {
-          var hide = function (u) {
-            return String(u || '').replace(/(\/app\/t\/)[^/?#]+/, '$1[kod]');
-          };
-          if (location.pathname.indexOf('/app') === 0) {
-            // /app oldalak: ne indexeljék, és ne menjen ki referrer
-            var robots = document.createElement('meta');
-            robots.name = 'robots'; robots.content = 'noindex, nofollow';
-            var ref = document.createElement('meta');
-            ref.name = 'referrer'; ref.content = 'no-referrer';
-            document.head.appendChild(robots);
-            document.head.appendChild(ref);
-          }
-          gtag('config', 'G-VH1HVL18W2', {
-            page_location: hide(location.href),
-            page_referrer: hide(document.referrer)
-          });
-        })();
-      </script>
-    </head>
-
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Training Boost — Székely Zoli</title>
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/app-apple-touch-icon.png" />
+    <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
+    <script>
+      if (location.pathname.indexOf('/app') === 0) {
+        var robots = document.createElement('meta');
+        robots.name = 'robots'; robots.content = 'noindex, nofollow';
+        var ref = document.createElement('meta');
+        ref.name = 'referrer'; ref.content = 'no-referrer';
+        document.head.appendChild(robots);
+        document.head.appendChild(ref);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

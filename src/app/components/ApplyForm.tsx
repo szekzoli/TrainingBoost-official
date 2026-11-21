@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { applySchema, type ApplyInput } from "../../lib/apply-schema";
 import { toast } from "sonner";
 import { Calendar } from "../../components/ui/calendar";
@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/pop
 import { Button } from "../../components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Link } from "react-router-dom";
 
 interface Props {
   type: ApplyInput["type"];
@@ -13,7 +14,6 @@ interface Props {
   showPhone?: boolean;
   messagePlaceholder?: string;
   showSlotPicker?: boolean;
-  presetDate?: Date;
 }
 
 const SLOT_BY_DAY: Record<number, { label: string; time: string } | undefined> = {
@@ -32,16 +32,11 @@ export function ApplyForm({
   showPhone = true,
   messagePlaceholder = "Mesélj röviden a céljaidról…",
   showSlotPicker = false,
-  presetDate,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [date, setDate] = useState<Date | undefined>();
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  useEffect(() => {
-    if (presetDate) setDate(presetDate);
-  }, [presetDate]);
 
   const slotString = useMemo(() => {
     if (!date) return "";
@@ -186,6 +181,13 @@ export function ApplyForm({
       >
         {loading ? "Küldés…" : submitLabel}
       </button>
+      <p className="text-center text-xs text-muted-foreground">
+        Az adataidat csak a jelentkezésed kezeléséhez használom. Részletek az{" "}
+        <Link to="/adatkezeles" className="underline underline-offset-4 hover:text-foreground">
+          adatkezelési tájékoztatóban
+        </Link>
+        .
+      </p>
     </form>
   );
 }

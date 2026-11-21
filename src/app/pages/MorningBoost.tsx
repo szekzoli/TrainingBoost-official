@@ -1,13 +1,10 @@
-import { ArrowRight, Clock, MapPin, Sun, Users, Flame, Zap, Sparkles, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { ArrowRight, Clock, MapPin, QrCode, Wallet, Ticket, ExternalLink, RefreshCw, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
-import { EventBanner, EVENT_DAY } from '../components/EventPopup';
-import morningBoostImage from '../../imports/morning-boost-page.png';
+import morningBoostImage from '../../assets/img/mb-oldal.webp';
 
 export default function MorningBoost() {
-  const location = useLocation();
-
   return (
     <>
       <section className="relative overflow-visible border-b border-border bg-gradient-warm">
@@ -15,19 +12,16 @@ export default function MorningBoost() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
             <Reveal>
-              <EventBanner />
-            </Reveal>
-            <Reveal>
               <p className="text-sm font-semibold uppercase tracking-wider text-accent">Csoportos edzés</p>
             </Reveal>
             <Reveal delay={1}>
               <h1 className="mt-3 font-display text-4xl font-bold leading-[1.2] md:leading-[1.15] md:text-5xl">
-                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-2">indítsd lendülettel</span> a napod
+                Morning Boost — <span className="bg-gradient-accent bg-clip-text text-transparent italic inline-block leading-tight pr-[0.08em]">indítsd lendülettel</span> a napod
               </h1>
             </Reveal>
             <Reveal delay={2}>
               <p className="mt-5 text-lg text-muted-foreground">
-                60 perces funkcionális csoportos edzés: erő, core, mobilitás és állóképesség — lendületes napinditás kis létszámú csoportban.
+                60 perces funkcionális csoportos edzés: erő, core, mobilitás és állóképesség — lendületes napindítás kis létszámú csoportban.
               </p>
             </Reveal>
 
@@ -68,6 +62,8 @@ export default function MorningBoost() {
               <img
                 src={morningBoostImage}
                 alt="Morning Boost csoportos edzés"
+                loading="eager"
+                fetchPriority="high"
                 width={832}
                 height={949}
                 className="rounded-2xl object-cover shadow-[var(--shadow-elegant)]"
@@ -92,7 +88,7 @@ export default function MorningBoost() {
               <RefreshCw className="h-4 w-4" />
             </div>
             <div>
-              <p className="font-display text-base font-semibold"><em>„Kiotsuke, Rei!"</em> — meghajlással kezdünk és zárunk</p>
+              <p className="font-display text-base font-semibold"><em>„Kiotsuke, Rei!”</em> — meghajlással kezdünk és zárunk</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Judós hagyomány: minden edzést egy közös meghajlással nyitunk és ugyanúgy zárunk — a tisztelet és a fókusz pillanata.
               </p>
@@ -157,7 +153,7 @@ export default function MorningBoost() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Wallet className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">Egy edzés: 4 000 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">Egy edzés: 4 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   A díjat közvetlenül nálam tudod rendezni. Tartalmazza a terembe lépést is, nem szükséges külön belépő / bérlet.
                 </p>
@@ -169,7 +165,7 @@ export default function MorningBoost() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Ticket className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 35 000 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 35 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Opcionálisan 10 alkalmas bérletet is vásárolhatsz nálam a csoportos edzéshez.
                 </p>
@@ -203,7 +199,7 @@ export default function MorningBoost() {
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <a
-                  href="https://www.google.com/maps/dir/?api=1&destination=Black+Door+Fitness+Vac+Szent+Laszlo+ut+34&hl=en"
+                  href="https://www.google.com/maps/dir/?api=1&destination=Black+Door+Fitness+Vac+Szent+Laszlo+ut+34&hl=hu"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
@@ -254,7 +250,6 @@ export default function MorningBoost() {
             submitLabel="Jelentkezem"
             messagePlaceholder="Pl. korábbi edzéstapasztalat, esetleges sérülések…"
             showSlotPicker={true}
-            presetDate={location.state?.eventPreset ? EVENT_DAY : undefined}
           />
         </Reveal>
 

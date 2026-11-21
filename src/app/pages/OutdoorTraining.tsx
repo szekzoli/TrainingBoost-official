@@ -2,7 +2,7 @@ import { ArrowRight, MapPin, Wallet, Ticket, ExternalLink, Sparkles, MessageCirc
 import { Link } from 'react-router-dom';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
-import outdoorBoostImage from '../../imports/outdoor.jpg';
+import outdoorBoostImage from '../../assets/img/outdoor.webp';
 
 export default function OutdoorTraining() {
   return (
@@ -57,6 +57,9 @@ export default function OutdoorTraining() {
               <img
                 src={outdoorBoostImage}
                 alt="Outdoor edzés"
+                width={1000}
+                height={1310}
+                fetchPriority="high"
                 className="rounded-2xl object-cover shadow-[var(--shadow-elegant)]"
               />
             </div>
@@ -78,7 +81,7 @@ export default function OutdoorTraining() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">Első edzés: 1 500 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">Első edzés: 1 500 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Az első alkalom kedvezményes áron, hogy kipróbálhasd, mennyire illik hozzád a kültéri edzés.
                 </p>
@@ -90,7 +93,7 @@ export default function OutdoorTraining() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Wallet className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">Egy alkalom: 3 500 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">Egy alkalom: 3 500 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   A díjat közvetlenül nálam tudod rendezni az edzés alkalmával.
                 </p>
@@ -102,7 +105,7 @@ export default function OutdoorTraining() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Ticket className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 30 000 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 30 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Opcionálisan 10 alkalmas bérletet is vásárolhatsz nálam a kültéri csoportos edzéshez.
                 </p>

@@ -8,6 +8,8 @@ import PersonalTraining from './pages/PersonalTraining';
 // import OnlinePrograms from './pages/OnlinePrograms';
 import OutdoorTraining from './pages/OutdoorTraining';
 import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import NotFound from './pages/NotFound';
 
 // Az edzésnapló (/app) külön csomagba kerül, hogy a nyilvános oldalt ne nehezítse.
 const AppShell = lazy(() => import('./components/app/AppShell'));
@@ -32,6 +34,7 @@ export default function App() {
         {/* <Route path="/online-programs" element={<Layout><OnlinePrograms /></Layout>} /> */}
         <Route path="/outdoor-training" element={<Layout><OutdoorTraining /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
+        <Route path="/adatkezeles" element={<Layout><Privacy /></Layout>} />
         <Route
           path="/app"
           element={<Suspense fallback={null}><AppShell /></Suspense>}
@@ -49,6 +52,7 @@ export default function App() {
           <Route path="haladas" element={<Suspense fallback={null}><AppProgress /></Suspense>} />
           <Route path="haladas/:exerciseId" element={<Suspense fallback={null}><AppProgress /></Suspense>} />
         </Route>
+        <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
     </BrowserRouter>
   );

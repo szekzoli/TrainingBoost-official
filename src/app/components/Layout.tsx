@@ -2,6 +2,8 @@ import { Menu, X, Instagram, Mail, Phone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import { openConsentSettings } from '../../lib/consent';
+import { CookieBanner } from './CookieBanner';
 
 const nav = [
   { to: "/", label: "Főoldal" },
@@ -25,8 +27,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       '/online-programs': 'Online programok — Training Boost — Székely Zoli',
       '/outdoor-training': 'Kültéri edzés — Training Boost — Székely Zoli',
       '/contact': 'Kapcsolat — Training Boost — Székely Zoli',
+      '/adatkezeles': 'Adatkezelési tájékoztató — Training Boost — Székely Zoli',
     };
-    document.title = titles[location.pathname] || 'Training Boost — Székely Zoli';
+    document.title = titles[location.pathname] || 'Az oldal nem található — Training Boost';
   }, [location.pathname]);
 
   useEffect(() => {
@@ -36,10 +39,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       return;
     }
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [location.pathname]);
+  }, [location.pathname, location.hash]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    // overflow-x-clip: a díszítő háttérfoltok ne tegyék oldalra görgethetővé az oldalt (a sticky fejlécet nem zavarja)
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="font-display text-lg font-bold tracking-tight">
@@ -147,10 +151,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </ul>
           </div>
         </div>
-        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Székely Zoltán. Minden jog fenntartva.
+        <div className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} Székely Zoltán. Minden jog fenntartva.</p>
+          <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <Link to="/adatkezeles" className="hover:text-foreground">
+              Adatkezelési tájékoztató
+            </Link>
+            <Link to="/adatkezeles#impresszum" className="hover:text-foreground">
+              Impresszum
+            </Link>
+            <button type="button" onClick={openConsentSettings} className="hover:text-foreground">
+              Süti-beállítások
+            </button>
+          </p>
         </div>
       </footer>
+      <CookieBanner />
     </div>
   );
 }

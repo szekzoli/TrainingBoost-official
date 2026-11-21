@@ -1,7 +1,7 @@
 import { CircleCheck, ArrowRight, MapPin, Wallet, Ticket } from 'lucide-react';
 import { Reveal } from '../components/Reveal';
 import { ApplyForm } from '../components/ApplyForm';
-import personalTrainingImage from '../../imports/personal-training-page.jpg';
+import personalTrainingImage from '../../assets/img/szemelyi-oldal.webp';
 
 export default function PersonalTraining() {
   return (
@@ -41,6 +41,9 @@ export default function PersonalTraining() {
               <img
                 src={personalTrainingImage}
                 alt="Személyi edzés — funkcionális mozgás"
+                width={1000}
+                height={1229}
+                fetchPriority="high"
                 className="rounded-2xl object-cover shadow-[var(--shadow-elegant)]"
               />
             </div>
@@ -159,7 +162,7 @@ export default function PersonalTraining() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Wallet className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">Egy edzés: 9 000 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">Egy edzés: 9 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   A díjat közvetlenül nálam tudod rendezni.
                 </p>
@@ -171,7 +174,7 @@ export default function PersonalTraining() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground">
                   <Ticket className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 80 000 Ft</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold">10 alkalmas bérlet: 80 000 Ft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Opcionálisan bérletet is vásárolhatsz, amely kedvezőbb alkalmanként, és rugalmasan felhasználható.
                 </p>
@@ -184,7 +187,7 @@ export default function PersonalTraining() {
                   <Wallet className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">Páros edzés</h3>
-                <p className="mt-2 font-semibold">13 000 Ft</p>
+                <p className="mt-2 font-semibold">13 000 Ft</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Két fő részére tervezett edzés, személyre szabott programmal és közös haladással.
                 </p>

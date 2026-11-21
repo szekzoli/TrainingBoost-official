@@ -1,16 +1,14 @@
   import { Sparkles, ArrowRight, Instagram, Dumbbell, Target, Activity, Footprints, ArrowUpRight } from 'lucide-react';
   import { Link } from 'react-router-dom';
   import { Reveal } from '../components/Reveal';
-  import { EventPopup } from '../components/EventPopup';
   import heroImage from '../../imports/zoli-hero.webp';
-  import morningBoostImage from '../../imports/morning-boost-hero.png';
-  import personalTrainingImage from '../../imports/personal-training-hero.jpg';
-  import outdoorBoostImage from '../../imports/outdoor.jpg'; 
+  import morningBoostImage from '../../assets/img/mb-kartya.webp';
+  import personalTrainingImage from '../../assets/img/szemelyi-kartya.webp';
+  import outdoorBoostImage from '../../assets/img/outdoor.webp';
 
   export default function HomePage() {
     return (
       <>
-        <EventPopup />
         <section className="relative overflow-visible border-b border-border bg-gradient-warm">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-mesh opacity-80"></div>
           <div className="pointer-events-none absolute -top-32 -right-24 -z-10 h-96 w-96 rounded-full bg-accent/30 blur-[120px] animate-pulse-glow"></div>
@@ -54,6 +52,9 @@
                 src={heroImage}
                 alt="Székely Zoltán személyi edző"
                 loading="eager"
+                fetchPriority="high"
+                width={800}
+                height={1094}
                 className="block h-auto w-full max-w-[280px] md:max-w-md object-contain drop-shadow-2xl"
               />
             </Reveal>
@@ -172,6 +173,10 @@
                   <img
                     src={morningBoostImage}
                     alt="Morning Boost"
+                    width={800}
+                    height={1200}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80"></div>
@@ -195,6 +200,10 @@
                   <img
                     src={personalTrainingImage}
                     alt="Személyi edzés"
+                    width={800}
+                    height={1196}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80"></div>
@@ -218,6 +227,10 @@
                   <img
                     src={outdoorBoostImage}
                     alt="Outdoor Boost"
+                    width={1000}
+                    height={1310}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80"></div>
