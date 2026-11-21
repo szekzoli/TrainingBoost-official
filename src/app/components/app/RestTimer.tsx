@@ -12,11 +12,25 @@ export const useRestTimer = () => useContext(RestTimerContext);
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
+const STORE_KEY = 'tb_rest_timer';
+
 export function RestTimerProvider({ children }: { children: React.ReactNode }) {
   const { restTimer: enabled } = usePrefs();
-  const [endAt, setEndAt] = useState<number | null>(null);
-  const [total, setTotal] = useState(0);
-  const [label, setLabel] = useState('');
+  // A futó pihenő a böngészőfülhöz mentve (sessionStorage): ha a telefon zárolása közben a böngésző
+  // újratölti az oldalt, a számláló a hátralévő idővel folytatódik.
+  const saved = useMemo(() => {
+    try {
+      const v = JSON.parse(sessionStorage.getItem(STORE_KEY) ?? 'null') as
+        | { endAt: number; total: number; label: string }
+        | null;
+      return v && typeof v.endAt === 'number' && v.endAt > Date.now() ? v : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const [endAt, setEndAt] = useState<number | null>(saved?.endAt ?? null);
+  const [total, setTotal] = useState(saved?.total ?? 0);
+  const [label, setLabel] = useState(saved?.label ?? '');
   const [now, setNow] = useState(() => Date.now());
   const [finished, setFinished] = useState(false);
   const hideTimer = useRef<number | null>(null);
@@ -57,6 +71,15 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
     }, 250);
     return () => window.clearInterval(id);
   }, [endAt, finished]);
+
+  useEffect(() => {
+    try {
+      if (endAt === null || finished) sessionStorage.removeItem(STORE_KEY);
+      else sessionStorage.setItem(STORE_KEY, JSON.stringify({ endAt, total, label }));
+    } catch {
+      /* privát mód: nincs mentés */
+    }
+  }, [endAt, total, label, finished]);
 
   useEffect(() => {
     if (!enabled) stop();

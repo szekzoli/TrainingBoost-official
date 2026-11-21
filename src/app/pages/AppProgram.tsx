@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone, isLoggable } from '../components/app/plan-utils';
@@ -8,6 +8,7 @@ import { describeChanges, programOverview, supersetTags } from '../../lib/progra
 // Az aktuális hét tartalmát mutatja; ha később egy gyakorlat változik, azt kis jelzés mutatja.
 export default function AppProgram() {
   const { plan, logs } = useSession();
+  const [search, setSearch] = useSearchParams();
   if (!plan) return null;
 
   const next = [...plan.days]
@@ -16,6 +17,12 @@ export default function AppProgram() {
   const lastWeek = Math.max(...plan.days.map((d) => d.week));
   const ov = programOverview(plan.days, next?.week ?? lastWeek);
   const totalWeeks = new Set(plan.days.map((d) => d.week)).size;
+  // Egyszerre egy nap látszik (telefonon a négy nap egymás alatt túl hosszú). A választott nap az URL-ben
+  // marad (?nap=2), így a gyakorlat részleteiből visszalépve ugyanaz a nap nyílik meg.
+  // Alapból a következő edzés napja.
+  const wanted = Number(search.get('nap')) || next?.day;
+  const selected = ov.days.find((d) => d.day === wanted) ?? ov.days[0];
+  const backTo = selected ? `/app/program?nap=${selected.day}` : '/app/program';
 
   return (
     <div className="space-y-5">
@@ -36,7 +43,31 @@ export default function AppProgram() {
 
       {ov.days.length === 0 && <p className="text-sm text-app-navy/70">A tervben még nincs edzésnap.</p>}
 
-      {ov.days.map((d) => {
+      {ov.days.length > 1 && (
+        <div className="-mx-4 overflow-x-auto px-4" role="tablist" aria-label="Edzésnapok">
+          <div className="flex gap-2">
+            {ov.days.map((d) => {
+              const on = d.day === selected?.day;
+              return (
+                <button
+                  key={d.day}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setSearch({ nap: String(d.day) }, { replace: true })}
+                  className={`min-h-11 shrink-0 rounded-[10px] border px-4 text-sm font-semibold ${
+                    on ? 'border-app-navy bg-app-navy text-white' : 'border-app-line bg-white text-app-navy'
+                  }`}
+                >
+                  {d.title ?? `${d.day}. nap`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {ov.days.filter((d) => d === selected).map((d) => {
         const tags = supersetTags(d.rows.map((r) => r.row));
         let lastSection: string | null | undefined;
         return (
@@ -63,7 +94,7 @@ export default function AppProgram() {
                     )}
                     <Link
                       to={`/app/e/${d.week}/${d.day}/${row.id}`}
-                      state={{ from: '/app/program' }}
+                      state={{ from: backTo }}
                       className={`-mx-2 flex min-h-10 items-center gap-2 rounded-lg px-2 py-1 text-sm active:bg-app-navy/5 ${
                         tag ? 'border-l-2 border-app-ink' : ''
                       }`}
