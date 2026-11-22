@@ -20,6 +20,7 @@ import {
   type Op,
 } from './offline';
 import { todayIso } from './dates';
+import { inAppBrowser } from './install-prompt';
 
 const CODE_KEY = 'tb_app_code';
 const CONSENT_KEY = 'tb_app_consent';
@@ -98,8 +99,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const entryMatch = useMatch('/app/t/:code');
   const entryCode = entryMatch?.params.code ?? null;
-  // ?telepites: a link az URL-ben marad, hogy iPhone-on a "Főképernyőhöz adás" a saját linket mentse el
-  const keepUrl = new URLSearchParams(useLocation().search).has('telepites');
+  // A link az URL-ben marad:
+  // - ?telepites: hogy iPhone-on a "Főképernyőhöz adás" a saját linket mentse el;
+  // - közösségi app (Instagram, Messenger…) beépített böngészőjében: hogy a „Megnyitás böngészőben”
+  //   a kódot is átvigye (a Safari / Chrome tárolója külön van, ott még nem ismerjük a kódot).
+  const keepUrl = new URLSearchParams(useLocation().search).has('telepites') || inAppBrowser() !== null;
 
   const [code, setCode] = useState<string | null>(() => storeGet(CODE_KEY));
   const [status, setStatus] = useState<SessionStatus>(code ? 'loading' : 'nocode');
