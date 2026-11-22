@@ -51,3 +51,25 @@ export function isStandalone() {
     (navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
+
+/**
+ * Közösségi appok beépített böngészője (Instagram, Facebook, Messenger, TikTok stb.). Innen nem lehet
+ * a főképernyőhöz adni, és a tárolt adatok sem közösek a Safarival / Chrome-mal.
+ * Visszaadja az app nevét, vagy null-t, ha rendes böngészőben vagyunk.
+ */
+export function inAppBrowser(): string | null {
+  if (typeof navigator === 'undefined') return null;
+  const ua = navigator.userAgent;
+  if (/Instagram/i.test(ua)) return 'Instagram';
+  if (/FBAN\/Messenger|MessengerForiOS|Orca-Android/i.test(ua)) return 'Messenger';
+  if (/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)) return 'Facebook';
+  if (/musical_ly|TikTok|BytedanceWebview/i.test(ua)) return 'TikTok';
+  if (/LinkedInApp/i.test(ua)) return 'LinkedIn';
+  if (/\bLine\//i.test(ua)) return 'LINE';
+  if (/GSA\//i.test(ua)) return 'Google app';
+  return null;
+}
+
+export const isIos = () =>
+  typeof navigator !== 'undefined' &&
+  (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));

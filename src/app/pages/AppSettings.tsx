@@ -16,7 +16,8 @@ import {
 import { useSession } from '../components/app/session';
 import { usePrefs, type ThemePref } from '../components/app/prefs';
 import { CalendarReminderCard } from '../components/app/CalendarReminderCard';
-import { canPromptInstall, isStandalone, promptInstall, subscribeInstall } from '../components/app/install-prompt';
+import { canPromptInstall, inAppBrowser, isStandalone, promptInstall, subscribeInstall } from '../components/app/install-prompt';
+import { InAppBrowserNote } from '../components/app/InAppBrowserNote';
 
 const THEMES: { value: ThemePref; label: string }[] = [
   { value: 'light', label: 'Világos' },
@@ -147,6 +148,7 @@ export default function AppSettings() {
             </button>
           )
         )}
+        {code && inAppBrowser() && <InAppBrowserNote link={`${window.location.origin}/app/t/${code}?telepites=1`} />}
         <div className="space-y-1 text-sm leading-relaxed text-app-navy/80">
           <p>
             <span className="font-semibold text-app-navy">iPhone (Safari):</span> koppints az alábbi gombra, majd a

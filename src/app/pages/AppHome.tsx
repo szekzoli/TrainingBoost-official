@@ -3,9 +3,11 @@ import { CalendarDays, Check, ChevronRight, ClipboardList, TrendingUp } from 'lu
 import { useSession } from '../components/app/session';
 import { isDayDone, weeksOf } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
+import { InAppBrowserNote } from '../components/app/InAppBrowserNote';
+import { inAppBrowser } from '../components/app/install-prompt';
 
 export default function AppHome() {
-  const { plan, logs } = useSession();
+  const { plan, logs, code } = useSession();
   const installMode = new URLSearchParams(useLocation().search).has('telepites');
   if (!plan) return null;
 
@@ -27,10 +29,14 @@ export default function AppHome() {
       {installMode && (
         <section className="space-y-2 rounded-[14px] border border-app-teal bg-app-mint p-4 text-sm text-app-navy">
           <p className="font-semibold text-app-ink">Most add hozzá a főképernyőhöz</p>
-          <p>
-            Koppints alul a <strong>Megosztás</strong> gombra (négyzet felfelé nyíllal), görgess le, és válaszd a{' '}
-            <strong>Főképernyőhöz adás</strong> lehetőséget. Az ikonról mindig a saját tervedet nyitod meg.
-          </p>
+          {inAppBrowser() && code ? (
+            <InAppBrowserNote link={`${window.location.origin}/app/t/${code}?telepites=1`} />
+          ) : (
+            <p>
+              Koppints alul a <strong>Megosztás</strong> gombra (négyzet felfelé nyíllal), görgess le, és válaszd a{' '}
+              <strong>Főképernyőhöz adás</strong> lehetőséget. Az ikonról mindig a saját tervedet nyitod meg.
+            </p>
+          )}
           <Link to="/app" className="inline-block font-semibold text-app-ink underline">
             Kész, vissza
           </Link>
