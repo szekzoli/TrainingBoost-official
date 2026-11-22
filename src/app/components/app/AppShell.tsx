@@ -150,7 +150,10 @@ function useInstallMeta(code: string | null) {
       document.head.appendChild(el);
       added.push(el);
     };
-    add('link', { rel: 'manifest', href: `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}` });
+    // A manifest csak akkor kerül az oldalra, ha már ismerjük a kódot. Az iPhone az elsőként látott manifestet
+    // jegyzi meg: ha betöltés közben (kód nélkül) bekerülne, a „Főképernyőhöz adás” a kód nélküli /app címet
+    // mentené el, és az ikonról nem a saját terv nyílna meg.
+    if (code) add('link', { rel: 'manifest', href: `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}` });
     add('link', { rel: 'apple-touch-icon', href: '/app-apple-touch-icon.png' });
     add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
     add('meta', { name: 'mobile-web-app-capable', content: 'yes' });

@@ -152,7 +152,8 @@ export default function AppSettings() {
         <div className="space-y-1 text-sm leading-relaxed text-app-navy/80">
           <p>
             <span className="font-semibold text-app-navy">iPhone (Safari):</span> koppints az alábbi gombra, majd a
-            Megosztás gombra (négyzet felfelé nyíllal) → <em>Főképernyőhöz adás</em>.
+            címsor melletti ••• gomb → <em>Megosztás</em> → <em>Főképernyőhöz adás</em> (régebbi iPhone-on közvetlenül a
+            Megosztás gomb, négyzet felfelé nyíllal).
           </p>
           <p>
             <span className="font-semibold text-app-navy">Android (Chrome):</span> a jobb felső ⋮ menü →{' '}

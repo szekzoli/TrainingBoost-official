@@ -31,7 +31,7 @@ const ALARMS = [
 ];
 
 export function CalendarReminderCard() {
-  const { plan } = useSession();
+  const { plan, code } = useSession();
   const perWeek = useMemo(() => plan?.days.filter((d) => d.week === 1).length ?? 3, [plan]);
   const weeks = useMemo(() => Math.max(0, ...(plan?.days.map((d) => d.week) ?? [0])), [plan]);
   const end = planEnd(plan?.plan.started_on, weeks);
@@ -45,7 +45,9 @@ export function CalendarReminderCard() {
   const settings: ReminderSettings = { days, time, duration, alarm, until: end };
   const ready = days.length > 0 && /^\d{2}:\d{2}$/.test(time);
   const title = 'Edzés (TrainingBoost)';
-  const appUrl = `${window.location.origin}/app`;
+  // A saját link kerül az eseménybe: a naptárból nyitva a böngésző mindig a saját tervet mutatja
+  // (akkor is, ha ott még nem nyitotta meg, vagy korábban más linket nyitott meg)
+  const appUrl = code ? `${window.location.origin}/app/t/${code}` : `${window.location.origin}/app`;
 
   const toggle = (k: DayKey) => setDays((d) => (d.includes(k) ? d.filter((x) => x !== k) : [...d, k]));
 
@@ -63,8 +65,8 @@ export function CalendarReminderCard() {
         <div>
           <h2 className="font-semibold">Edzésnapok a naptáradba</h2>
           <p className="text-sm leading-relaxed text-app-navy/80">
-            Ismétlődő esemény kerül a telefonod naptárába, és a naptár szól előtte. Bármikor törölheted vagy
-            áthelyezheted ott, ahogy bármelyik másik eseményt.
+            Ismétlődő esemény kerül a telefonod naptárába, és a naptár szól előtte. Az eseményben a saját linked
+            van, onnan egy koppintással megnyílik a naplód. Ezért közös (megosztott) naptárba ne tedd.
           </p>
         </div>
       </div>

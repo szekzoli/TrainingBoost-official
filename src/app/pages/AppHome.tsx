@@ -32,10 +32,19 @@ export default function AppHome() {
           {inAppBrowser() && code ? (
             <InAppBrowserNote link={`${window.location.origin}/app/t/${code}?telepites=1`} />
           ) : (
-            <p>
-              Koppints alul a <strong>Megosztás</strong> gombra (négyzet felfelé nyíllal), görgess le, és válaszd a{' '}
-              <strong>Főképernyőhöz adás</strong> lehetőséget. Az ikonról mindig a saját tervedet nyitod meg.
-            </p>
+            <ol className="list-decimal space-y-1 pl-5">
+              <li>
+                Koppints a címsor melletti <strong>•••</strong> gombra (régebbi iPhone-on közvetlenül a{' '}
+                <strong>Megosztás</strong> gombra: négyzet felfelé nyíllal).
+              </li>
+              <li>
+                Válaszd a <strong>Megosztás</strong>, majd a <strong>Főképernyőhöz adás</strong> lehetőséget (ha nem
+                látod, görgess lejjebb, vagy koppints a <strong>Továbbiak</strong> sorra).
+              </li>
+              <li>
+                Koppints a <strong>Hozzáadás</strong> gombra. Az ikonról mindig a saját tervedet nyitod meg.
+              </li>
+            </ol>
           )}
           <Link to="/app" className="inline-block font-semibold text-app-ink underline">
             Kész, vissza
