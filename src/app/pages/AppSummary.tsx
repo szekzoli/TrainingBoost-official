@@ -109,11 +109,11 @@ export default function AppSummary() {
         </button>
       </div>
 
-      <div className="summary-scroll -mx-4 overflow-x-auto px-4">
+      <div className="summary-scroll -mx-4 overflow-x-auto">
         <table className="w-max min-w-full border-separate border-spacing-0 text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-[8.5rem] max-w-[10rem] border-b border-app-line bg-white px-2 py-2 text-left font-semibold">
+              <th className="sticky left-0 z-10 min-w-[9.5rem] max-w-[11rem] border-b border-r border-app-line bg-white py-2 pl-4 pr-2 text-left font-semibold">
                 Gyakorlat
               </th>
               {summary.weeks.map((w) => (
@@ -126,7 +126,7 @@ export default function AppSummary() {
                   {w}. hét{w === currentWeek ? ' ●' : ''}
                 </th>
               ))}
-              <th className="min-w-[4.5rem] border-b border-app-line px-2 py-2 text-center font-semibold">Változás</th>
+              <th className="min-w-[5rem] border-b border-app-line py-2 pl-2 pr-4 text-center font-semibold">Változás</th>
             </tr>
           </thead>
           <tbody>
@@ -152,16 +152,17 @@ function SummaryDayRows({
       <tr>
         <td
           colSpan={weeks.length + 2}
-          className="sticky left-0 border-b border-app-line bg-app-mint px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-app-ink"
+          className="border-b border-app-line bg-app-mint py-1.5 text-[11px] font-bold uppercase tracking-wider text-app-ink"
         >
-          {group.title}
+          {/* A cella a teljes táblázat széles; csak a felirat marad a helyén vízszintes görgetéskor */}
+          <span className="sticky left-0 inline-block pl-4">{group.title}</span>
         </td>
       </tr>
       {group.rows.map((row) => (
         <tr key={row.key}>
           <th
             scope="row"
-            className="sticky left-0 z-10 max-w-[10rem] border-b border-app-line bg-white px-2 py-2 text-left align-top font-medium leading-snug"
+            className="sticky left-0 z-10 max-w-[11rem] border-b border-r border-app-line bg-white py-2 pl-4 pr-2 text-left align-top font-medium leading-snug"
           >
             {row.exerciseName}
           </th>
@@ -180,7 +181,7 @@ function SummaryDayRows({
             );
           })}
           <td
-            className={`border-b border-l border-app-line px-2 py-2 text-center align-top font-semibold ${
+            className={`border-b border-l border-app-line py-2 pl-2 pr-4 text-center align-top font-semibold ${
               row.change.startsWith('+') ? 'text-emerald-700' : row.change.startsWith('−') ? 'text-rose-700' : 'text-app-muted'
             }`}
           >
