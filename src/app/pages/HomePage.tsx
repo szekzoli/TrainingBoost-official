@@ -32,15 +32,21 @@
 
               <Reveal delay={2}>
                 <p className="mt-3 max-w-lg text-base md:mt-5 md:text-lg text-muted-foreground">
-                  Csoportos és személyi edzésekkel segítelek erőállóképességet, core erőt és mobilitást fejleszteni a hosszú távú egészségért.
+                  Csoportos és személyi edzésekkel, vagy egy neked szabott edzéstervvel, amit a telefonodon követsz, segítelek erőállóképességet, core erőt és mobilitást fejleszteni a hosszú távú egészségért.
                 </p>
               </Reveal>
 
               <Reveal delay={3}>
-                <div className="mt-5 md:mt-8">
+                <div className="mt-5 flex flex-wrap items-center gap-3 md:mt-8">
                   <Link to="/morning-boost" className="inline-flex items-center gap-2 rounded-full bg-gradient-accent px-6 py-3 text-sm md:px-8 md:py-3.5 md:text-base font-semibold text-accent-foreground shadow-[var(--shadow-elegant)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
                     Morning Boost — jelentkezem
                     <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                  </Link>
+                  <Link
+                    to="/personal-training#edzesterv"
+                    className="inline-flex items-center gap-2 rounded-full border border-accent/50 bg-background/60 px-6 py-3 text-sm font-semibold text-foreground transition hover:border-accent hover:text-accent md:px-7 md:py-3.5 md:text-base"
+                  >
+                    Edzéstervet kérek
                   </Link>
                 </div>
               </Reveal>

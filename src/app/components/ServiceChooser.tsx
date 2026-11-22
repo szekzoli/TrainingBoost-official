@@ -12,7 +12,9 @@ type Where = 'terem' | 'kint' | 'mindegy';
 
 type Answers = { who?: Who; when?: When; where?: Where };
 
-type Offer = { key: string; title: string; to: string; text: string };
+type Offer = { key: string; title: string; to: string; text: string; cta?: string };
+
+const ask = (msg: string) => `/contact?uzenet=${encodeURIComponent(msg)}`;
 
 const OFFERS: Record<string, Offer> = {
   mb: {
@@ -21,11 +23,12 @@ const OFFERS: Record<string, Offer> = {
     to: '/morning-boost',
     text: 'Reggeli csoportos funkcionális edzés a teremben, kis létszámmal. Alapos bemelegítés, körök, a végén core és nyújtás. Kezdőként is be lehet kapcsolódni.',
   },
-  kint: {
-    key: 'kint',
-    title: 'Kültéri edzés',
-    to: '/outdoor-training',
-    text: 'Csoportos edzés a szabadban, a felszerelést én viszem. Jó választás, ha szereted a friss levegőt és a társaságot.',
+  esti: {
+    key: 'esti',
+    title: 'Napközbeni vagy esti csoport',
+    to: ask('Szia! Érdekelne egy napközbeni vagy esti csoportos edzés. Szólnál, ha indul ilyen? '),
+    cta: 'Érdeklődöm',
+    text: 'A csoportos edzéseim most reggel vannak, de lehet, hogy indul később napközbeni vagy esti időpont is. Írj, és szólok, ha lesz, vagy megbeszéljük, mi illene hozzád addig is.',
   },
   pt: {
     key: 'pt',
@@ -42,37 +45,50 @@ const OFFERS: Record<string, Offer> = {
   terv: {
     key: 'terv',
     title: 'Személyre szabott edzésterv',
-    to: '/personal-training',
+    to: '/personal-training#edzesterv',
     text: 'Ha a saját tempódban, egyedül edzel: a célodhoz igazított terv, közös átvétellel, saját követő oldallal a telefonodon, és időszakonként frissítjük.',
   },
 };
 
+/** A kültéri edzés most szünetel: ha valaki a szabadot választja, ezt jelezzük. */
+const OUTDOOR_NOTE = 'A kültéri edzés most szünetel.';
+
 function recommend(a: Required<Answers>): { main: Offer; alt?: Offer; why: string } {
+  const outdoor = a.where === 'kint' ? ` ${OUTDOOR_NOTE}` : '';
   if (a.who === 'edzo') {
     return {
       main: OFFERS.pt,
-      alt: a.when === 'reggel' && a.where !== 'kint' ? OFFERS.mb : OFFERS.terv,
+      alt: a.when === 'reggel' ? OFFERS.mb : OFFERS.terv,
       why: 'Edzővel, egyénileg szeretnél edzeni.',
     };
   }
   if (a.who === 'paros') {
-    return { main: OFFERS.paros, alt: a.where === 'kint' ? OFFERS.kint : OFFERS.mb, why: 'Egy társsal együtt edzenél.' };
+    return {
+      main: OFFERS.paros,
+      alt: a.when === 'reggel' ? OFFERS.mb : undefined,
+      why: 'Egy társsal együtt edzenél.',
+    };
   }
   if (a.who === 'onallo') {
     return { main: OFFERS.terv, alt: OFFERS.pt, why: 'Önállóan, a saját időbeosztásod szerint edzenél.' };
   }
-  // Csoport
-  if (a.where === 'kint') {
-    return { main: OFFERS.kint, alt: a.when === 'reggel' ? OFFERS.mb : undefined, why: 'Csoportban, a szabadban edzenél.' };
-  }
-  if (a.when === 'reggel' || a.when === 'valtozo' || a.where === 'terem') {
+  // Csoport: jelenleg csak reggeli, termi csoport van
+  if (a.when === 'kesobb') {
     return {
-      main: OFFERS.mb,
-      alt: a.where === 'terem' ? undefined : OFFERS.kint,
-      why: a.when === 'reggel' ? 'Csoportban edzenél, és a reggel neked jó.' : 'Csoportban edzenél.',
+      main: OFFERS.esti,
+      alt: OFFERS.paros,
+      why: `Csoportban edzenél, inkább napközben vagy este.${outdoor}`,
     };
   }
-  return { main: OFFERS.kint, alt: OFFERS.mb, why: 'Csoportban edzenél, inkább később napközben.' };
+  return {
+    main: OFFERS.mb,
+    why:
+      a.where === 'kint'
+        ? `Csoportban edzenél. ${OUTDOOR_NOTE} A reggeli csoport teremben van.`
+        : a.when === 'reggel'
+          ? 'Csoportban edzenél, és a reggel neked jó.'
+          : 'Csoportban edzenél, és rugalmas vagy az időponttal.',
+  };
 }
 
 const QUESTIONS: {
@@ -161,7 +177,9 @@ export function ServiceChooser() {
 
           {result && (
             <div className="mt-6" aria-live="polite">
-              <p className="text-muted-foreground">{result.why} Ezt ajánlom:</p>
+              <p className="text-muted-foreground">
+                {result.why} {result.main.key === 'esti' ? 'Ilyen csoportom most még nincs:' : 'Ezt ajánlom:'}
+              </p>
               <div className="mt-4 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
                 <h3 className="font-display text-2xl font-bold">{result.main.title}</h3>
                 <p className="mt-2 text-muted-foreground">{result.main.text}</p>
@@ -169,7 +187,7 @@ export function ServiceChooser() {
                   to={result.main.to}
                   className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-soft)]"
                 >
-                  Megnézem <ArrowRight className="h-4 w-4" />
+                  {result.main.cta ?? 'Megnézem'} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
               {result.alt && (

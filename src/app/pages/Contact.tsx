@@ -1,7 +1,11 @@
 import { Mail, Instagram, Phone } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { ApplyForm } from '../components/ApplyForm';
 
 export default function Contact() {
+  // A „Melyik neked való?” választó előre kitöltheti az üzenetet (?uzenet=...)
+  const [params] = useSearchParams();
+  const prefill = params.get('uzenet')?.slice(0, 500) || undefined;
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
       <div className="text-center mb-12">
@@ -63,6 +67,7 @@ export default function Contact() {
             type="contact"
             submitLabel="Üzenet küldése"
             messagePlaceholder="Miben segíthetek?"
+            defaultMessage={prefill}
           />
         </div>
       </div>

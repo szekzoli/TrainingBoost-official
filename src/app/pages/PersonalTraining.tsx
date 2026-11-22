@@ -261,7 +261,7 @@ export default function PersonalTraining() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-20">
+      <section id="edzesterv" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
         <Reveal className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">Edzésterv készítés</p>
           <h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">

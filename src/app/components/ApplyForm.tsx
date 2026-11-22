@@ -14,6 +14,8 @@ interface Props {
   showPhone?: boolean;
   messagePlaceholder?: string;
   showSlotPicker?: boolean;
+  /** Előre kitöltött üzenet (pl. a „Melyik neked való?” választóból érkezve). */
+  defaultMessage?: string;
 }
 
 const SLOT_BY_DAY: Record<number, { label: string; time: string } | undefined> = {
@@ -32,6 +34,7 @@ export function ApplyForm({
   showPhone = true,
   messagePlaceholder = "Mesélj röviden a céljaidról…",
   showSlotPicker = false,
+  defaultMessage,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -170,6 +173,7 @@ export function ApplyForm({
           name="message"
           rows={4}
           maxLength={2000}
+          defaultValue={defaultMessage}
           placeholder={messagePlaceholder}
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring/30 focus:ring-2"
         />
