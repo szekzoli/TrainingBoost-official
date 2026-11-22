@@ -6,6 +6,7 @@ import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/ap
 import { getVideoEmbedUrl } from '../../../lib/video';
 import PrescriptionBar from './PrescriptionBar';
 import { useRestTimer } from './RestTimer';
+import { usePrefs } from './prefs';
 import { useSession } from './session';
 import {
   bestWeight,
@@ -41,7 +42,8 @@ function parseReps(s: string): number | null | 'invalid' {
  * azon belül körönként (sorozatszám), azon belül a gyakorlatok sorrendjében. Így szuperszettnél A1 → A2 → A1…
  * Billentyűzetet nem nyit (fókusz nélkül), hogy a pihenő-számláló látható maradjon.
  */
-function goToNextSet(current: HTMLElement) {
+/** A sorozat-sorok edzési sorrendben: blokk, sorozatszám, majd a szuperszetten belüli helyük szerint. */
+function orderedSetRows(): HTMLElement[] {
   const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-set-row]'));
   const groupOrder = new Map<string, number>();
   const posInGroup = new Map<string, number>();
@@ -57,13 +59,24 @@ function goToNextSet(current: HTMLElement) {
     posInGroup.get(`${r.dataset.group}|${r.dataset.ex}`)!,
   ];
   const cmp = (a: number[], b: number[]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
-  const sorted = [...rows].sort((a, b) => cmp(rank(a), rank(b)));
+  return [...rows].sort((a, b) => cmp(rank(a), rank(b)));
+}
+
+function goToNextSet(current: HTMLElement) {
+  const sorted = orderedSetRows();
   const i = sorted.indexOf(current);
   const next = sorted.slice(i + 1).find((r) => r.dataset.done !== 'true');
   if (!next) return;
   next.scrollIntoView({ behavior: 'smooth', block: 'center' });
   next.classList.add('ring-2', 'ring-app-teal');
   window.setTimeout(() => next.classList.remove('ring-2', 'ring-app-teal'), 1600);
+}
+
+/** Szuperszett/kör közepe: a következő sor ugyanannak a blokknak ugyanabban a körében van (ilyenkor nincs pihenő). */
+function isMidRound(current: HTMLElement): boolean {
+  const sorted = orderedSetRows();
+  const next = sorted[sorted.indexOf(current) + 1];
+  return !!next && next.dataset.group === current.dataset.group && next.dataset.set === current.dataset.set;
 }
 
 const inputClass =
@@ -98,6 +111,7 @@ function SetRow({
 }) {
   const { logSet } = useSession();
   const timer = useRestTimer();
+  const { defaultRest } = usePrefs();
   const [weight, setWeight] = useState(fmtWeight(saved?.weight_kg));
   const [reps, setReps] = useState(saved?.reps?.toString() ?? '');
   const [saving, setSaving] = useState(false);
@@ -124,6 +138,9 @@ function SetRow({
       if (!ok) restore(); // hozzájárulás nélkül nem mentünk
       else {
         if (startRest && restSeconds) timer.start(restSeconds, `${exerciseName}, ${setNumber}. sorozat után`);
+        // Ha az edző nem adott meg pihenőt: az ügyfél saját alapértéke (szuperszett közepén nincs pihenő)
+        else if (startRest && defaultRest > 0 && !(rowEl && isMidRound(rowEl)))
+          timer.start(defaultRest, `${exerciseName}, ${setNumber}. sorozat után`);
         if (startRest && rowEl) window.setTimeout(() => goToNextSet(rowEl), 150);
         // Új egyéni rekord: nagyobb súly, mint eddig bármikor (és volt már korábbi súly)
         if (w !== null && bestBefore !== null && w > bestBefore) {

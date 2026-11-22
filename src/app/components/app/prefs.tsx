@@ -1,4 +1,4 @@
-// Az ügyfél saját beállításai (csak ezen az eszközön, localStorage): téma és pihenőidő-számláló.
+// Az ügyfél saját beállításai (csak ezen az eszközön, localStorage): téma, pihenőidő-számláló és alap pihenő.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type ThemePref = 'light' | 'dark' | 'system';
@@ -10,10 +10,14 @@ type Prefs = {
   setTheme: (t: ThemePref) => void;
   restTimer: boolean;
   setRestTimer: (on: boolean) => void;
+  /** Alap pihenő másodpercben, ha a tervben nincs megadva (0 = nincs). */
+  defaultRest: number;
+  setDefaultRest: (sec: number) => void;
 };
 
 const THEME_KEY = 'tb_app_theme';
 const TIMER_KEY = 'tb_app_rest_timer';
+const DEFAULT_REST_KEY = 'tb_app_default_rest';
 
 function read(key: string): string | null {
   try {
@@ -49,6 +53,10 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   });
   const [sysDark, setSysDark] = useState(systemDark);
   const [restTimer, setRestTimerState] = useState(() => read(TIMER_KEY) !== 'off');
+  const [defaultRest, setDefaultRestState] = useState(() => {
+    const n = Number(read(DEFAULT_REST_KEY));
+    return Number.isFinite(n) && n > 0 && n <= 600 ? n : 0;
+  });
 
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -65,6 +73,11 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   const setRestTimer = useCallback((on: boolean) => {
     setRestTimerState(on);
     write(TIMER_KEY, on ? 'on' : 'off');
+  }, []);
+
+  const setDefaultRest = useCallback((sec: number) => {
+    setDefaultRestState(sec);
+    write(DEFAULT_REST_KEY, String(sec));
   }, []);
 
   const dark = theme === 'dark' || (theme === 'system' && sysDark);
@@ -90,8 +103,8 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   }, [dark]);
 
   const value = useMemo(
-    () => ({ theme, dark, setTheme, restTimer, setRestTimer }),
-    [theme, dark, setTheme, restTimer, setRestTimer],
+    () => ({ theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest }),
+    [theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest],
   );
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;
 }

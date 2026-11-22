@@ -41,7 +41,7 @@ export default function AppSettings() {
       toast.error('A másolás nem sikerült. Jelöld ki a linket, és másold kézzel.');
     }
   };
-  const { theme, setTheme, restTimer, setRestTimer } = usePrefs();
+  const { theme, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest } = usePrefs();
   const [busy, setBusy] = useState(false);
 
   const remove = async () => {
@@ -86,7 +86,7 @@ export default function AppSettings() {
           <span>
             <span className="block font-semibold">Pihenőidő-számláló</span>
             <span className="block text-sm text-app-navy/70">
-              Egy sorozat kipipálása után visszaszámol, ha az edzésterv megad pihenőidőt.
+              Egy sorozat kipipálása után visszaszámol a pihenőből.
             </span>
           </span>
           <input
@@ -96,6 +96,33 @@ export default function AppSettings() {
             className="size-6 shrink-0 accent-[var(--color-app-teal)]"
           />
         </label>
+        {restTimer && (
+          <div className="pt-2">
+            <p className="text-sm font-semibold">Alap pihenő</p>
+            <p className="text-sm text-app-navy/70">Ha az edzéstervben egy gyakorlatnál nincs megadva pihenő, ennyivel számol.</p>
+            <div className="mt-2 grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Alap pihenő">
+              {[
+                { v: 0, l: 'Nincs' },
+                { v: 60, l: '60 mp' },
+                { v: 90, l: '90 mp' },
+                { v: 120, l: '2 perc' },
+              ].map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  role="radio"
+                  aria-checked={defaultRest === o.v}
+                  onClick={() => setDefaultRest(o.v)}
+                  className={`h-11 rounded-[10px] border text-sm font-semibold ${
+                    defaultRest === o.v ? 'border-app-teal bg-app-mint text-app-ink' : 'border-app-line text-app-navy/70'
+                  }`}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <CalendarReminderCard />
