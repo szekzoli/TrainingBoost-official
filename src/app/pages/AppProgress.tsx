@@ -6,7 +6,7 @@ import { useSession } from '../components/app/session';
 import { formatSet, isSetDone } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
 import { BodyWeightCard } from '../components/app/BodyWeightCard';
-import { MilestoneList } from '../components/app/Milestones';
+import { MilestoneList } from '../components/app/MilestoneList';
 
 type Session = { date: string; dayTitle: string; week: number; sets: SetLog[] };
 type ExerciseHistory = { id: string; name: string; sessions: Session[] };

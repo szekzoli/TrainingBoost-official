@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
 import './install-prompt';
-import { useMilestoneToasts } from './Milestones';
+import { useMilestoneToasts } from './MilestoneList';
 import { CalendarDays, ClipboardList, Settings, TrendingUp, CloudOff } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
