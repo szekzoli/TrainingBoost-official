@@ -4,7 +4,7 @@ Csak a saját gépen futó edzésterv-készítő. Nem része a fő buildnek (`np
 
 ## Első indítás
 
-1. Supabase SQL Editor: futtasd le sorban a `supabase/003-admin.sql`, a `supabase/004-admin.sql` , a `supabase/005-kovetes.sql`, a `supabase/006-ugyfel-reszletek.sql` és a `supabase/007-gyakorlattar.sql` fájlt (újrafuttathatók). Gyakorlattár feltöltése (nem kötelező): `supabase/sablonok/gyakorlattar.sql`.
+1. Supabase SQL Editor: futtasd le sorban a `supabase/003-admin.sql`, a `supabase/004-admin.sql` , a `supabase/005-kovetes.sql`, a `supabase/006-ugyfel-reszletek.sql`, a `supabase/007-gyakorlattar.sql`, a `supabase/008-testsuly.sql` és a `supabase/009-edzes-reszletek.sql` fájlt (újrafuttathatók). Gyakorlattár feltöltése (nem kötelező): `supabase/sablonok/gyakorlattar.sql`.
 2. Másold az `admin/.env.example` fájlt `admin/.env.local` néven, és töltsd ki:
    - `SUPABASE_URL`: a projekt címe,
    - `SUPABASE_SECRET_KEY`: a "secret key" (Project Settings → API Keys). **Ne** a publishable/anon kulcs.
