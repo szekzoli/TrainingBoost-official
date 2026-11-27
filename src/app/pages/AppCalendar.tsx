@@ -6,6 +6,7 @@ import type { PlanDay, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { isDayDone, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, fromIso, isoDay, todayIso, workoutDate } from '../components/app/dates';
+import { durationOf, fmtClock, fmtMinutes } from '../components/app/workout-time';
 
 type Entry = { day: PlanDay; log: WorkoutLog; done: boolean };
 
@@ -189,6 +190,10 @@ export default function AppCalendar() {
                         <span className="block font-semibold">{day.title ?? `${day.day}. edzés`}</span>
                         <span className="block text-xs text-app-muted">
                           {day.week}. hét · {p.done} / {p.total} sorozat
+                          {(() => {
+                            const d = durationOf(log);
+                            return d ? ` · ${fmtClock(d.start)}–${fmtClock(d.end)} (${fmtMinutes(d.minutes)})` : '';
+                          })()}
                           {log.note ? ` · „${log.note.slice(0, 40)}${log.note.length > 40 ? '…' : ''}”` : ''}
                         </span>
                       </span>

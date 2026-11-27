@@ -1,137 +1,322 @@
-// Pihenőidő-számláló: egy sorozat kipipálása után, ha az edző megadott pihenőt (rest_seconds),
-// alul egy sáv számol vissza. A végén rezeg (ha a telefon engedi), és magától eltűnik.
+// Számlálók az alsó sávban:
+//  * pihenő: egy sorozat kipipálása után, ha van megadott pihenő, visszaszámol. Az utolsó 5 másodpercben
+//    csippan, a végén hosszabb hang (és rezgés, ahol a telefon tudja), majd magától eltűnik;
+//  * munka: időre menő gyakorlat (pl. plank „30 mp”, oldalanként „30-30 mp”): 3 mp felkészülés, majd a
+//    szakaszok (oldalváltásnál 3 mp átállás), a végén a sorozat magától mentődik;
+//  * stopper: „max” idős gyakorlat; a Stop gombbal áll meg, és az eltelt idő mentődik.
+// Amíg számláló fut, a képernyő nem alszik el (ahol a böngésző engedi). A sávra koppintva vissza lehet
+// jutni az edzéshez, ha közben máshová navigált.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Timer, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Square, Timer, X } from 'lucide-react';
 import { usePrefs } from './prefs';
+import { beep, keepAwake, unlockAudio } from './sound';
 
-type RestTimerApi = { start: (seconds: number, label: string) => void; stop: () => void };
+/** Egy munka-szakasz (pl. „Bal oldal”, 30 mp). */
+export type WorkPhase = { label: string; seconds: number };
 
-const RestTimerContext = createContext<RestTimerApi>({ start: () => {}, stop: () => {} });
+export type WorkOptions = {
+  /** A gyakorlat neve (a sáv felirata). */
+  label: string;
+  /** Visszaszámlálós szakaszok; üres tömb = stopper (fölfelé számol). */
+  phases: WorkPhase[];
+  /** Két szakasz közti átállás felirata (alapból „Oldalváltás”). */
+  switchLabel?: string;
+  /** Hová vigyen a sávra koppintás (az edzésnap, a sorral). */
+  href?: string;
+  /** A végén hívódik: egy szakasz hossza (visszaszámlálásnál) vagy az eltelt idő (stopper), másodpercben. */
+  onDone: (seconds: number) => void;
+};
+
+type RestTimerApi = {
+  /** Pihenő indítása. href: a sávra koppintva ide visz vissza. */
+  start: (seconds: number, label: string, href?: string) => void;
+  /** Időre menő sorozat indítása (gombnyomásra hívandó, hogy a hang elinduljon). */
+  startWork: (opts: WorkOptions) => void;
+  stop: () => void;
+  /** Fut-e éppen bármilyen számláló (a sáv látszik). */
+  active: boolean;
+};
+
+const RestTimerContext = createContext<RestTimerApi>({ start: () => {}, startWork: () => {}, stop: () => {}, active: false });
 
 export const useRestTimer = () => useContext(RestTimerContext);
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 const STORE_KEY = 'tb_rest_timer';
+const PREP = 3; // felkészülés a munka előtt (mp)
+const SWITCH = 3; // oldalváltás két szakasz között (mp)
+
+type Segment = { kind: 'prep' | 'work' | 'switch'; label: string; seconds: number };
+
+type Run =
+  | { kind: 'rest'; endAt: number; total: number; label: string; href?: string }
+  | { kind: 'work'; startAt: number; segments: Segment[]; label: string; href?: string; phaseSeconds: number }
+  | { kind: 'stopwatch'; startAt: number; label: string; href?: string };
+
+function buildSegments(phases: WorkPhase[], switchLabel = 'Oldalváltás'): Segment[] {
+  const out: Segment[] = [{ kind: 'prep', label: 'Felkészülés', seconds: PREP }];
+  phases.forEach((p, i) => {
+    if (i > 0) out.push({ kind: 'switch', label: switchLabel, seconds: SWITCH });
+    out.push({ kind: 'work', label: p.label, seconds: p.seconds });
+  });
+  return out;
+}
+
+/** Hol tart a munka-számláló: az aktuális szakasz, benne hátralévő mp; null, ha vége. */
+function segmentAt(segments: Segment[], elapsedMs: number): { i: number; left: number; seg: Segment } | null {
+  let t = elapsedMs / 1000;
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (t < seg.seconds) return { i, left: Math.ceil(seg.seconds - t), seg };
+    t -= seg.seconds;
+  }
+  return null;
+}
+
+/** Ugyanaz az oldal-e (útvonal + ?sor nélkül), hogy a „vissza” linket csak máshol mutassuk. */
+function samePath(href: string | undefined, pathname: string) {
+  return !href || href.split('?')[0] === pathname;
+}
 
 export function RestTimerProvider({ children }: { children: React.ReactNode }) {
   const { restTimer: enabled } = usePrefs();
+  const { pathname } = useLocation();
   // A futó pihenő a böngészőfülhöz mentve (sessionStorage): ha a telefon zárolása közben a böngésző
   // újratölti az oldalt, a számláló a hátralévő idővel folytatódik.
-  const saved = useMemo(() => {
+  const saved = useMemo<Run | null>(() => {
     try {
       const v = JSON.parse(sessionStorage.getItem(STORE_KEY) ?? 'null') as
-        | { endAt: number; total: number; label: string }
+        | { endAt: number; total: number; label: string; href?: string }
         | null;
-      return v && typeof v.endAt === 'number' && v.endAt > Date.now() ? v : null;
+      return v && typeof v.endAt === 'number' && v.endAt > Date.now() ? { kind: 'rest', ...v } : null;
     } catch {
       return null;
     }
   }, []);
-  const [endAt, setEndAt] = useState<number | null>(saved?.endAt ?? null);
-  const [total, setTotal] = useState(saved?.total ?? 0);
-  const [label, setLabel] = useState(saved?.label ?? '');
+  const [run, setRun] = useState<Run | null>(saved);
   const [now, setNow] = useState(() => Date.now());
   const [finished, setFinished] = useState(false);
   const hideTimer = useRef<number | null>(null);
+  const onDoneRef = useRef<((s: number) => void) | null>(null);
+  // Melyik másodpercnél csippantunk már (hogy egy másodpercben csak egyszer szóljon)
+  const lastBeep = useRef<string>('');
+
+  const clearHide = () => {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    hideTimer.current = null;
+  };
 
   const stop = useCallback(() => {
-    setEndAt(null);
+    setRun(null);
     setFinished(false);
-    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    onDoneRef.current = null;
+    clearHide();
   }, []);
 
   const start = useCallback(
-    (seconds: number, l: string) => {
+    (seconds: number, l: string, href?: string) => {
       if (!enabled || !(seconds > 0)) return;
-      if (hideTimer.current) window.clearTimeout(hideTimer.current);
-      setTotal(seconds);
-      setLabel(l);
+      unlockAudio();
+      clearHide();
+      onDoneRef.current = null;
+      lastBeep.current = '';
       setFinished(false);
       setNow(Date.now());
-      setEndAt(Date.now() + seconds * 1000);
+      setRun({ kind: 'rest', endAt: Date.now() + seconds * 1000, total: seconds, label: l, href });
     },
     [enabled],
   );
 
+  const startWork = useCallback((opts: WorkOptions) => {
+    unlockAudio();
+    clearHide();
+    lastBeep.current = '';
+    onDoneRef.current = opts.onDone;
+    setFinished(false);
+    const t = Date.now();
+    setNow(t);
+    if (opts.phases.length === 0) {
+      beep(true);
+      setRun({ kind: 'stopwatch', startAt: t, label: opts.label, href: opts.href });
+    } else {
+      setRun({
+        kind: 'work',
+        startAt: t,
+        segments: buildSegments(opts.phases, opts.switchLabel),
+        label: opts.label,
+        href: opts.href,
+        phaseSeconds: opts.phases[0].seconds,
+      });
+    }
+  }, []);
+
+  /** Munka / stopper lezárása: mentés a megadott idővel, utána a sáv eltűnik (vagy pihenő indul). */
+  const finishWork = useCallback(
+    (seconds: number) => {
+      const cb = onDoneRef.current;
+      onDoneRef.current = null;
+      setRun(null);
+      setFinished(false);
+      if (cb && seconds > 0) cb(seconds);
+    },
+    [],
+  );
+
+  // Ketyegés és hangjelzések
   useEffect(() => {
-    if (endAt === null || finished) return;
-    const id = window.setInterval(() => {
+    if (!run || finished) return;
+    const tick = () => {
       const t = Date.now();
       setNow(t);
-      if (t >= endAt) {
-        setFinished(true);
-        try {
-          navigator.vibrate?.([200, 100, 200]);
-        } catch {
-          /* nincs rezgés */
+      if (run.kind === 'rest') {
+        const left = Math.ceil((run.endAt - t) / 1000);
+        if (t >= run.endAt) {
+          setFinished(true);
+          beep(true);
+          hideTimer.current = window.setTimeout(() => setRun(null), 4000);
+        } else if (left <= 5 && lastBeep.current !== `r${left}`) {
+          lastBeep.current = `r${left}`;
+          beep();
         }
-        hideTimer.current = window.setTimeout(() => setEndAt(null), 4000);
+      } else if (run.kind === 'work') {
+        const at = segmentAt(run.segments, t - run.startAt);
+        if (!at) {
+          beep(true);
+          finishWork(run.phaseSeconds);
+          return;
+        }
+        const key = `${at.i}:${at.left}`;
+        if (lastBeep.current === key) return;
+        const firstTick = lastBeep.current === '';
+        lastBeep.current = key;
+        // Szakasz eleje: munka indul → hosszú hang; a felkészülés és a munka utolsó 3 mp-e → rövid
+        const segStart = at.left === at.seg.seconds && !firstTick;
+        if (segStart && at.seg.kind === 'work') beep(true);
+        else if (segStart && at.seg.kind === 'switch') beep(true);
+        else if (at.left <= 3 && at.seg.kind !== 'switch') beep();
       }
-    }, 250);
+    };
+    tick();
+    const id = window.setInterval(tick, 200);
     return () => window.clearInterval(id);
-  }, [endAt, finished]);
+  }, [run, finished, finishWork]);
 
+  // Pihenő mentése a fülhöz (újratöltés után is folytatódjon); munka-számlálót nem mentünk
   useEffect(() => {
     try {
-      if (endAt === null || finished) sessionStorage.removeItem(STORE_KEY);
-      else sessionStorage.setItem(STORE_KEY, JSON.stringify({ endAt, total, label }));
+      if (run?.kind === 'rest' && !finished)
+        sessionStorage.setItem(STORE_KEY, JSON.stringify({ endAt: run.endAt, total: run.total, label: run.label, href: run.href }));
+      else sessionStorage.removeItem(STORE_KEY);
     } catch {
       /* privát mód: nincs mentés */
     }
-  }, [endAt, total, label, finished]);
+  }, [run, finished]);
 
+  // Kikapcsolt pihenő-számlálónál a futó pihenő is álljon le (a munka-számláló nem pihenő)
   useEffect(() => {
-    if (!enabled) stop();
-  }, [enabled, stop]);
+    if (!enabled && run?.kind === 'rest') stop();
+  }, [enabled, run, stop]);
 
-  const api = useMemo(() => ({ start, stop }), [start, stop]);
-  const left = endAt === null ? 0 : Math.max(0, Math.ceil((endAt - now) / 1000));
-  const adjust = (d: number) => setEndAt((e) => (e === null ? e : Math.max(Date.now() + 1000, e + d * 1000)));
+  // Képernyő ébren tartása, amíg számláló fut
+  const active = run !== null;
+  useEffect(() => {
+    keepAwake(active && !finished);
+    return () => keepAwake(false);
+  }, [active, finished]);
+
+  const api = useMemo(() => ({ start, startWork, stop, active }), [start, startWork, stop, active]);
+
+  const adjust = (d: number) =>
+    setRun((r) => (r && r.kind === 'rest' ? { ...r, endAt: Math.max(Date.now() + 1000, r.endAt + d * 1000) } : r));
+
+  let title = '';
+  let big = '';
+  let progress = 0;
+  let accent = false;
+  if (run?.kind === 'rest') {
+    const left = Math.max(0, Math.ceil((run.endAt - now) / 1000));
+    title = finished ? 'Pihenő vége, jöhet a következő!' : `Pihenő · ${run.label}`;
+    big = finished ? '0:00' : fmt(left);
+    progress = run.total ? left / run.total : 0;
+    accent = finished;
+  } else if (run?.kind === 'work') {
+    const at = segmentAt(run.segments, now - run.startAt);
+    const seg = at?.seg;
+    title = seg ? `${seg.label} · ${run.label}` : run.label;
+    big = at ? (seg!.kind === 'work' ? fmt(at.left) : String(at.left)) : '0:00';
+    progress = at && seg ? at.left / seg.seconds : 0;
+    accent = seg?.kind === 'work';
+  } else if (run?.kind === 'stopwatch') {
+    const el = Math.floor((now - run.startAt) / 1000);
+    title = `Stopper · ${run.label}`;
+    big = fmt(el);
+    progress = 1;
+    accent = true;
+  }
+
+  const showBack = run && !samePath(run.href, pathname);
+  const label = (
+    <div className="min-w-0 flex-1">
+      {showBack ? (
+        <p className="truncate text-xs font-semibold text-app-teal">‹ Vissza az edzéshez · {title}</p>
+      ) : (
+        <p className="truncate text-xs text-app-muted">{title}</p>
+      )}
+      <p className={`text-2xl font-bold tabular-nums ${accent && run?.kind !== 'rest' ? 'text-app-teal' : ''}`}>{big}</p>
+      <div className="mt-1 h-1 w-full rounded-full bg-app-navy/10" aria-hidden="true">
+        <div className="h-full rounded-full bg-app-teal transition-[width] duration-200" style={{ width: `${progress * 100}%` }} />
+      </div>
+    </div>
+  );
+
+  const btn = 'h-11 rounded-[10px] border border-app-line px-2.5 text-sm font-semibold';
 
   return (
     <RestTimerContext.Provider value={api}>
       {children}
-      {endAt !== null && (
+      {run && (
         <div
           role="timer"
           aria-live="polite"
           className="fixed inset-x-0 bottom-0 z-40 border-t border-app-line bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur print:hidden"
         >
           <div className="mx-auto flex max-w-md items-center gap-3">
-            <Timer className={`size-5 shrink-0 ${finished ? 'text-app-teal' : 'text-app-muted'}`} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-app-muted">{finished ? 'Pihenő vége, jöhet a következő!' : `Pihenő · ${label}`}</p>
-              <p className="text-2xl font-bold tabular-nums">{finished ? '0:00' : fmt(left)}</p>
-              <div className="mt-1 h-1 w-full rounded-full bg-app-navy/10" aria-hidden="true">
-                <div
-                  className="h-full rounded-full bg-app-teal transition-[width] duration-200"
-                  style={{ width: `${total ? (left / total) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-            {!finished && (
+            <Timer className={`size-5 shrink-0 ${accent ? 'text-app-teal' : 'text-app-muted'}`} />
+            {showBack && run.href ? (
+              <Link to={run.href} aria-label="Vissza az edzéshez" className="min-w-0 flex-1">
+                {label}
+              </Link>
+            ) : (
+              label
+            )}
+            {run.kind === 'rest' && !finished && (
               <>
-                <button
-                  type="button"
-                  onClick={() => adjust(-15)}
-                  className="h-11 rounded-[10px] border border-app-line px-2.5 text-sm font-semibold"
-                >
+                <button type="button" onClick={() => adjust(-15)} className={btn}>
                   −15
                 </button>
-                <button
-                  type="button"
-                  onClick={() => adjust(15)}
-                  className="h-11 rounded-[10px] border border-app-line px-2.5 text-sm font-semibold"
-                >
+                <button type="button" onClick={() => adjust(15)} className={btn}>
                   +15
                 </button>
               </>
             )}
+            {run.kind === 'stopwatch' && (
+              <button
+                type="button"
+                onClick={() => {
+                  beep(true);
+                  finishWork(Math.floor((Date.now() - run.startAt) / 1000));
+                }}
+                className="inline-flex h-11 items-center gap-1.5 rounded-[10px] bg-app-teal px-3 text-sm font-semibold text-white"
+              >
+                <Square className="size-4 fill-current" /> Stop
+              </button>
+            )}
             <button
               type="button"
               onClick={stop}
-              aria-label="Pihenő bezárása"
+              aria-label={run.kind === 'rest' ? 'Pihenő bezárása' : 'Számláló megszakítása (nem mentődik)'}
               className="flex size-11 items-center justify-center rounded-[10px] border border-app-line"
             >
               <X className="size-5" />

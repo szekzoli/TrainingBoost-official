@@ -7,7 +7,17 @@ const OUTBOX_KEY = 'tb_app_outbox_v1';
 const WEIGHTS_KEY = 'tb_app_weights_v1';
 
 export type Op =
-  | { t: 'set'; dayExerciseId: string; setNumber: number; weight: number | null; reps: number | null; at: string }
+  | {
+      t: 'set';
+      dayExerciseId: string;
+      setNumber: number;
+      weight: number | null;
+      reps: number | null;
+      note?: string | null;
+      hr?: number | null;
+      at: string;
+    }
+  | { t: 'start'; planDayId: string; at: string | null }
   | { t: 'complete'; planDayId: string; note: string | null; at: string }
   | { t: 'date'; planDayId: string; date: string | null }
   | { t: 'rate'; planDayId: string; rating: number | null };
@@ -52,7 +62,6 @@ export function saveOutbox(code: string, ops: Op[]) {
   if (ops.length === 0) {
     try {
       localStorage.removeItem(OUTBOX_KEY);
-    localStorage.removeItem(WEIGHTS_KEY);
     } catch {
       /* nincs teendő */
     }

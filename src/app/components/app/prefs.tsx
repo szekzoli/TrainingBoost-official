@@ -1,7 +1,10 @@
-// Az ügyfél saját beállításai (csak ezen az eszközön, localStorage): téma, pihenőidő-számláló és alap pihenő.
+// Az ügyfél saját beállításai (csak ezen az eszközön, localStorage): téma, pihenőidő-számláló, alap pihenő
+// és a pulzus mező megjelenése.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type ThemePref = 'light' | 'dark' | 'system';
+/** Pulzus mező: auto = ahol az edző bekapcsolta (gyakorlatonként), always = mindenhol, never = sehol. */
+export type HrMode = 'auto' | 'always' | 'never';
 
 type Prefs = {
   theme: ThemePref;
@@ -13,11 +16,14 @@ type Prefs = {
   /** Alap pihenő másodpercben, ha a tervben nincs megadva (0 = nincs). */
   defaultRest: number;
   setDefaultRest: (sec: number) => void;
+  hrMode: HrMode;
+  setHrMode: (m: HrMode) => void;
 };
 
 const THEME_KEY = 'tb_app_theme';
 const TIMER_KEY = 'tb_app_rest_timer';
 const DEFAULT_REST_KEY = 'tb_app_default_rest';
+const HR_KEY = 'tb_app_hr_mode';
 
 function read(key: string): string | null {
   try {
@@ -58,6 +64,11 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
     return Number.isFinite(n) && n > 0 && n <= 600 ? n : 0;
   });
 
+  const [hrMode, setHrModeState] = useState<HrMode>(() => {
+    const v = read(HR_KEY);
+    return v === 'always' || v === 'never' ? v : 'auto';
+  });
+
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
     if (!mq) return;
@@ -78,6 +89,11 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   const setDefaultRest = useCallback((sec: number) => {
     setDefaultRestState(sec);
     write(DEFAULT_REST_KEY, String(sec));
+  }, []);
+
+  const setHrMode = useCallback((m: HrMode) => {
+    setHrModeState(m);
+    write(HR_KEY, m);
   }, []);
 
   const dark = theme === 'dark' || (theme === 'system' && sysDark);
@@ -103,8 +119,8 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   }, [dark]);
 
   const value = useMemo(
-    () => ({ theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest }),
-    [theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest],
+    () => ({ theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode }),
+    [theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode],
   );
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;
 }

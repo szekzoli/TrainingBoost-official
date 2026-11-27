@@ -19,7 +19,7 @@ import {
   saveWeights,
   type Op,
 } from './offline';
-import { todayIso } from './dates';
+import { isoDay } from './dates';
 import { inAppBrowser } from './install-prompt';
 
 const CODE_KEY = 'tb_app_code';
@@ -65,8 +65,12 @@ type Session = {
     setNumber: number,
     weight: number | null,
     reps: number | null,
+    extra?: { note?: string | null; hr?: number | null },
   ) => Promise<boolean>;
-  completeDay: (planDayId: string, note: string | null) => Promise<boolean>;
+  /** Edzés kezdése (at: ISO idő; null: a kezdés törlése). */
+  startWorkout: (planDayId: string, at: string | null) => Promise<boolean>;
+  /** Edzés lezárása; at: a befejezés ideje (alapból most). */
+  completeDay: (planDayId: string, note: string | null, at?: string) => Promise<boolean>;
   /** Az edzés napja (ÉÉÉÉ-HH-NN) vagy null. */
   setWorkoutDate: (planDayId: string, date: string | null) => Promise<boolean>;
   /** Milyen nehéz volt az edzés (1–5) vagy null. */
@@ -265,11 +269,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           ...l,
           sets: [
             ...l.sets.filter((s) => !(s.day_exercise_id === op.dayExerciseId && s.set_number === op.setNumber)),
-            { day_exercise_id: op.dayExerciseId, set_number: op.setNumber, weight_kg: op.weight, reps: op.reps, logged_at: op.at },
+            {
+              day_exercise_id: op.dayExerciseId,
+              set_number: op.setNumber,
+              weight_kg: op.weight,
+              reps: op.reps,
+              note: op.note ?? null,
+              heart_rate: op.hr ?? null,
+              logged_at: op.at,
+            },
           ],
         }));
+      } else if (op.t === 'start') {
+        upsertLog(op.planDayId, (l) => ({ ...l, started_at: op.at }));
       } else if (op.t === 'complete') {
-        upsertLog(op.planDayId, (l) => ({ ...l, completed_at: op.at, note: op.note, performed_on: l.performed_on ?? todayIso() }));
+        upsertLog(op.planDayId, (l) => ({
+          ...l,
+          completed_at: op.at,
+          note: op.note,
+          performed_on: l.performed_on ?? isoDay(new Date(op.at)),
+        }));
       } else if (op.t === 'date') {
         upsertLog(op.planDayId, (l) => ({ ...l, performed_on: op.date }));
       } else {
@@ -282,9 +301,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const send = (c: string, op: Op) => {
     switch (op.t) {
       case 'set':
-        return appApi.logSet(c, op.dayExerciseId, op.setNumber, op.weight, op.reps);
+        return appApi.logSet(c, op.dayExerciseId, op.setNumber, op.weight, op.reps, op.note ?? null, op.hr ?? null);
+      case 'start':
+        return appApi.startWorkout(c, op.planDayId, op.at);
       case 'complete':
-        return appApi.completeDay(c, op.planDayId, op.note);
+        return appApi.completeDay(c, op.planDayId, op.note, op.at);
       case 'date':
         return appApi.setWorkoutDate(c, op.planDayId, op.date);
       case 'rate':
@@ -375,31 +396,68 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [code, ensureConsent, withConsent, applyLocal, queue, flush],
   );
 
+  type SetResult = {
+    plan_day_id: string;
+    day_exercise_id: string;
+    set_number: number;
+    weight_kg: number | null;
+    reps: number | null;
+    note?: string | null;
+    heart_rate?: number | null;
+    logged_at: string;
+  };
   const logSet: Session['logSet'] = useCallback(
-    (dayExerciseId, setNumber, weight, reps) =>
-      write<{ plan_day_id: string; day_exercise_id: string; set_number: number; weight_kg: number | null; reps: number | null; logged_at: string }>(
-        { t: 'set', dayExerciseId, setNumber, weight, reps, at: new Date().toISOString() },
+    (dayExerciseId, setNumber, weight, reps, extra) =>
+      write<SetResult>(
+        {
+          t: 'set',
+          dayExerciseId,
+          setNumber,
+          weight,
+          reps,
+          note: extra?.note ?? null,
+          hr: extra?.hr ?? null,
+          at: new Date().toISOString(),
+        },
         (r) =>
           upsertLog(r.plan_day_id, (l) => ({
             ...l,
             sets: [
               ...l.sets.filter((s) => !(s.day_exercise_id === r.day_exercise_id && s.set_number === r.set_number)),
-              { day_exercise_id: r.day_exercise_id, set_number: r.set_number, weight_kg: r.weight_kg, reps: r.reps, logged_at: r.logged_at },
+              {
+                day_exercise_id: r.day_exercise_id,
+                set_number: r.set_number,
+                weight_kg: r.weight_kg === null ? null : Number(r.weight_kg),
+                reps: r.reps,
+                // A 009-es SQL előtt a szerver nem adja vissza: ilyenkor a helyi érték marad látható
+                note: r.note !== undefined ? r.note : (extra?.note ?? null),
+                heart_rate: r.heart_rate !== undefined ? r.heart_rate : (extra?.hr ?? null),
+                logged_at: r.logged_at,
+              },
             ],
           })),
       ),
     [write],
   );
 
+  const startWorkout: Session['startWorkout'] = useCallback(
+    (planDayId, at) =>
+      write<{ started_at: string | null }>({ t: 'start', planDayId, at }, (r) =>
+        upsertLog(planDayId, (l) => ({ ...l, started_at: r.started_at })),
+      ),
+    [write],
+  );
+
   const completeDay: Session['completeDay'] = useCallback(
-    (planDayId, note) =>
-      write<{ completed_at: string; performed_on?: string | null; note: string | null }>(
-        { t: 'complete', planDayId, note, at: new Date().toISOString() },
+    (planDayId, note, at) =>
+      write<{ started_at?: string | null; completed_at: string; performed_on?: string | null; note: string | null }>(
+        { t: 'complete', planDayId, note, at: at ?? new Date().toISOString() },
         (r) =>
           upsertLog(planDayId, (l) => ({
             ...l,
             completed_at: r.completed_at,
             note: r.note,
+            started_at: r.started_at !== undefined ? r.started_at : l.started_at,
             performed_on: r.performed_on !== undefined ? r.performed_on : l.performed_on,
           })),
       ),
@@ -488,6 +546,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       acceptConsent,
       declineConsent,
       logSet,
+      startWorkout,
       completeDay,
       setWorkoutDate,
       rateWorkout,
@@ -509,6 +568,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       acceptConsent,
       declineConsent,
       logSet,
+      startWorkout,
       completeDay,
       setWorkoutDate,
       rateWorkout,

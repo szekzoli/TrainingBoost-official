@@ -18,6 +18,10 @@ export type PlanExercise = {
     video_url: string | null;
     image_url?: string | null;
     technique_note: string | null;
+    /** Eszköz a gyakorlattárból (pl. „Saját testsúly”). A 009-es SQL előtt hiányzik. */
+    equipment?: string | null;
+    /** A gyakorlatnál az app kérje a pulzust is. A 009-es SQL előtt hiányzik. */
+    track_hr?: boolean;
   };
 };
 
@@ -39,11 +43,17 @@ export type SetLog = {
   set_number: number;
   weight_kg: number | null;
   reps: number | null;
+  /** Rövid megjegyzés a sorozathoz (009-es SQL). */
+  note?: string | null;
+  /** Pulzus a sorozat végén (009-es SQL). */
+  heart_rate?: number | null;
   logged_at: string;
 };
 
 export type WorkoutLog = {
   plan_day_id: string;
+  /** Mikor kezdte az edzést (009-es SQL). */
+  started_at?: string | null;
   completed_at: string | null;
   /** Az edzés tényleges napja (ÉÉÉÉ-HH-NN), az ügyfél állíthatja. Régi adatbázisnál hiányozhat. */
   performed_on?: string | null;
@@ -54,7 +64,8 @@ export type WorkoutLog = {
   sets: SetLog[];
 };
 
-export type ApiErrorKind = 'invalid_code' | 'consent_required' | 'not_configured' | 'network' | 'other';
+/** missing_function: a szerveren még nincs meg a függvény (pl. a 009-es SQL még nem futott le). */
+export type ApiErrorKind = 'invalid_code' | 'consent_required' | 'not_configured' | 'network' | 'missing_function' | 'other';
 
 export class AppApiError extends Error {
   kind: ApiErrorKind;
@@ -86,6 +97,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
     const msg = error.message || '';
     if (msg.includes('invalid_code')) throw new AppApiError('invalid_code');
     if (msg.includes('consent_required')) throw new AppApiError('consent_required');
+    if (error.code === 'PGRST202' || /could not find the function/i.test(msg)) throw new AppApiError('missing_function');
     // A böngésző hálózati hibája (nincs net, a szerver alszik / nem válaszol): a supabase-js ilyenkor
     // nem dob kivételt, hanem a fetch hibaüzenetét adja vissza.
     if (/failed to fetch|networkerror|load failed|network request failed|fetch failed|abort|timed? ?out/i.test(msg)) {
@@ -111,20 +123,37 @@ export const appApi = {
   getLogs: (code: string) => rpc<WorkoutLog[]>('app_get_logs', { p_code: code }),
   giveConsent: (code: string) =>
     rpc<unknown>('app_give_consent', { p_code: code, p_version: CONSENT_VERSION }),
-  logSet: (
+  logSet: async (
     code: string,
     dayExerciseId: string,
     setNumber: number,
     weight: number | null,
     reps: number | null,
-  ) =>
-    rpc<SetLog & { plan_day_id: string }>('app_log_set', {
-      p_code: code,
-      p_day_exercise_id: dayExerciseId,
-      p_set_number: setNumber,
-      p_weight: weight,
-      p_reps: reps,
-    }),
+    note: string | null = null,
+    heartRate: number | null = null,
+  ) => {
+    const base = { p_code: code, p_day_exercise_id: dayExerciseId, p_set_number: setNumber, p_weight: weight, p_reps: reps };
+    try {
+      return await rpc<SetLog & { plan_day_id: string }>('app_log_set', { ...base, p_note: note, p_heart_rate: heartRate });
+    } catch (e) {
+      // A 009-es SQL előtt: a régi függvény (megjegyzés és pulzus nélkül)
+      if (e instanceof AppApiError && e.kind === 'missing_function') return rpc<SetLog & { plan_day_id: string }>('app_log_set', base);
+      throw e;
+    }
+  },
+  /** Edzés kezdése (at: ISO idő, null: törlés). A 009-es SQL előtt csendben kimarad. */
+  startWorkout: async (code: string, planDayId: string, at: string | null) => {
+    try {
+      return await rpc<{ plan_day_id: string; started_at: string | null }>('app_start_workout', {
+        p_code: code,
+        p_plan_day_id: planDayId,
+        p_at: at,
+      });
+    } catch (e) {
+      if (e instanceof AppApiError && e.kind === 'missing_function') return { plan_day_id: planDayId, started_at: at };
+      throw e;
+    }
+  },
   setWorkoutDate: (code: string, planDayId: string, date: string | null) =>
     rpc<{ plan_day_id: string; performed_on: string | null }>('app_set_workout_date', {
       p_code: code,
@@ -137,11 +166,15 @@ export const appApi = {
       p_plan_day_id: planDayId,
       p_rating: rating,
     }),
-  completeDay: (code: string, planDayId: string, note: string | null) =>
-    rpc<{ plan_day_id: string; completed_at: string; performed_on?: string | null; note: string | null }>('app_complete_day', {
-      p_code: code,
-      p_plan_day_id: planDayId,
-      p_note: note,
-    }),
+  completeDay: async (code: string, planDayId: string, note: string | null, at: string | null = null) => {
+    type R = { plan_day_id: string; started_at?: string | null; completed_at: string; performed_on?: string | null; note: string | null };
+    const base = { p_code: code, p_plan_day_id: planDayId, p_note: note };
+    try {
+      return await rpc<R>('app_complete_day', { ...base, p_at: at });
+    } catch (e) {
+      if (e instanceof AppApiError && e.kind === 'missing_function') return rpc<R>('app_complete_day', base);
+      throw e;
+    }
+  },
   deleteMyData: (code: string) => rpc<void>('app_delete_my_data', { p_code: code }),
 };

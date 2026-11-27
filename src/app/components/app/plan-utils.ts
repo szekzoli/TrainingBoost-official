@@ -66,12 +66,101 @@ export function repsPlaceholder(reps: string): string {
   return reps.match(/\d+/)?.[0] ?? '';
 }
 
-/** Rögzített sorozat rövid szövege: "10 kg × 10". */
-export function formatSet(s: SetLog): string {
-  const w = s.weight_kg !== null ? `${String(s.weight_kg).replace('.', ',')} kg` : null;
-  if (w && s.reps !== null) return `${w} × ${s.reps}`;
-  if (w) return w;
-  return `× ${s.reps}`;
+// ---------------------------------------------------------------------------
+// Gyakorlat-típusok: saját testsúlyos, súly nélküli, időre menő
+// ---------------------------------------------------------------------------
+
+/** Saját testsúlyos gyakorlat: a KG mező a plusz súly (+10) vagy a segítség (−20); üresen = csak testsúly. */
+export const isBodyweight = (item: PlanExercise) => item.exercise.equipment?.trim() === 'Saját testsúly';
+
+/** Eszközök, amelyeknél nincs súly (nem kérdezünk rá, ha üres a KG). */
+const NO_WEIGHT_EQUIPMENT = new Set(['Saját testsúly', 'Gumikötél / miniband', 'TRX', 'Fitball / BOSU', 'Egyéb', 'Kardió gép']);
+
+/**
+ * Kell-e súly ennél a gyakorlatnál (ha üres, rákérdezünk). Ha a gyakorlattár nem mondja meg az eszközt
+ * (pl. a 009-es SQL előtt), az előírt ellenállás dönt: ha van benne szám, súlyos gyakorlat.
+ */
+export function expectsWeight(item: PlanExercise): boolean {
+  const eq = item.exercise.equipment?.trim();
+  if (eq) return !NO_WEIGHT_EQUIPMENT.has(eq);
+  return /\d/.test(item.resistance ?? '');
+}
+
+/** Időre menő gyakorlat előírása. phases: a visszaszámlálás szakaszai; üres = stopper (max idő). */
+export type TimedSpec = { phases: { label: string; seconds: number }[]; sided: boolean };
+
+const TIME_UNIT = /(\d+(?:[.,]\d+)?)?\s*(mp|másodperc|sec|s|perc|min)\b/i;
+
+/**
+ * Az ismétlés-előírásból: időre megy-e, és milyen szakaszokkal.
+ *   „30 mp” → [30]; „30-30 mp” → bal 30, jobb 30; „2 × 30-30 mp” → bal, jobb, bal, jobb;
+ *   „1 perc” → [60]; „30-45 mp” → [45] (tartomány: a felső érték); „max mp”, „max idő” → stopper.
+ * A „30 m” (méter) nem idő. null, ha nem időre megy.
+ */
+export function timedSpec(reps: string): TimedSpec | null {
+  const r = reps.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!r) return null;
+  const unit = r.match(TIME_UNIT);
+  if (!unit && !/max(imum)? ?idő/.test(r)) return null;
+  if (/\d+\s*m\b(?!p)/.test(r) && !unit) return null;
+  const mult = unit && /perc|min/.test(unit[2]) ? 60 : 1;
+  // Körök: „2 ×”, „2x”
+  const roundsM = r.match(/^(\d+)\s*[×x*]\s*/);
+  const rounds = roundsM ? Math.min(10, Number(roundsM[1])) : 1;
+  const body = roundsM ? r.slice(roundsM[0].length) : r;
+  const pair = body.match(/^(\d+(?:[.,]\d+)?)\s*[-–]\s*(\d+(?:[.,]\d+)?)/);
+  const single = body.match(/^(\d+(?:[.,]\d+)?)/);
+  const num = (x: string) => Math.round(Number(x.replace(',', '.')) * mult);
+  const perSideWord = /oldalank[eé]nt|oldalt[oó]l/.test(r);
+  if (pair) {
+    const a = num(pair[1]);
+    const b = num(pair[2]);
+    if (a === b && a > 0) {
+      const phases = [];
+      for (let i = 0; i < rounds; i++) phases.push({ label: 'Bal oldal', seconds: a }, { label: 'Jobb oldal', seconds: a });
+      return { phases, sided: true };
+    }
+    const top = Math.max(a, b);
+    return top > 0 ? { phases: Array.from({ length: rounds }, (_, i) => ({ label: rounds > 1 ? `${i + 1}. kör` : 'Munka', seconds: top })), sided: false } : null;
+  }
+  if (single) {
+    const a = num(single[1]);
+    if (!(a > 0)) return null;
+    if (perSideWord) {
+      const phases = [];
+      for (let i = 0; i < rounds; i++) phases.push({ label: 'Bal oldal', seconds: a }, { label: 'Jobb oldal', seconds: a });
+      return { phases, sided: true };
+    }
+    return { phases: Array.from({ length: rounds }, (_, i) => ({ label: rounds > 1 ? `${i + 1}. kör` : 'Munka', seconds: a })), sided: false };
+  }
+  // Szám nélkül („max mp”, „max idő”): stopper
+  return { phases: [], sided: false };
+}
+
+/** Időtartam rövid szövege: 45 → „45 mp”, 90 → „1:30”. */
+export function fmtSeconds(sec: number): string {
+  if (sec < 60) return `${sec} mp`;
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+
+/** A sorozathoz írt megjegyzés szerint nem szabályos (nem számít rekordnak). */
+export const isFlagged = (s: SetLog) => /nem szabályos/i.test(s.note ?? '');
+
+/** Rögzített sorozat rövid szövege: "10 kg × 10", saját testsúlynál "TS × 8" / "+10 kg × 8", időnél "45 mp". */
+export function formatSet(s: SetLog, opts: { timed?: boolean; bodyweight?: boolean } = {}): string {
+  const kg = (n: number) => `${String(n).replace('.', ',').replace('-', '−')} kg`;
+  let w: string | null = null;
+  if (s.weight_kg !== null && s.weight_kg !== undefined) {
+    w = opts.bodyweight && s.weight_kg > 0 ? `+${kg(s.weight_kg)}` : kg(Number(s.weight_kg));
+  } else if (opts.bodyweight && !opts.timed) w = 'TS';
+  const r = s.reps === null ? null : opts.timed ? fmtSeconds(s.reps) : String(s.reps);
+  let out: string;
+  if (w && r !== null) out = opts.timed ? `${w} · ${r}` : `${w} × ${r}`;
+  else if (w) out = w;
+  else out = opts.timed ? (r ?? '') : `× ${r}`;
+  if (s.heart_rate) out += ` · ♥${s.heart_rate}`;
+  if (s.note?.trim()) out += ' ⚑';
+  return out;
 }
 
 /** Az adott gyakorlat legutóbbi, MÁS napon rögzített szetjei (szetszám szerint). */
@@ -114,8 +203,10 @@ export function topReps(reps: string): number | null {
 export function progressionTip(item: PlanExercise, prev: Map<number, SetLog>): { from: number; to: number } | null {
   const top = topReps(item.reps);
   if (top === null || item.sets < 1) return null;
+  if (timedSpec(item.reps) || isBodyweight(item)) return null;
   const sets = [...prev.values()].filter((s) => s.set_number <= item.sets);
   if (sets.length < item.sets) return null;
+  if (sets.some(isFlagged)) return null;
   if (!sets.every((s) => (s.reps ?? 0) >= top && s.weight_kg !== null && s.weight_kg > 0)) return null;
   const w = Math.min(...sets.map((s) => s.weight_kg as number));
   const step = w >= 20 ? 2.5 : 1;
@@ -135,6 +226,7 @@ export function bestWeight(
   for (const log of logs) {
     for (const s of log.sets) {
       if (s.weight_kg === null || exerciseOf.get(s.day_exercise_id) !== exerciseId) continue;
+      if (isFlagged(s)) continue; // a „nem szabályos” sorozat nem rekord
       if (except && s.day_exercise_id === except.dayExerciseId && s.set_number === except.setNumber) continue;
       if (best === null || s.weight_kg > best) best = s.weight_kg;
     }

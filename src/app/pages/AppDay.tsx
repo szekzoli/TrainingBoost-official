@@ -1,11 +1,30 @@
-import { Fragment, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Fragment, useEffect, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
-import { fmtDayLong, todayIso, workoutDate } from '../components/app/dates';
+import { fmtDayLong, isoDay, todayIso, workoutDate } from '../components/app/dates';
+import {
+  ASK_AFTER_HOURS,
+  durationOf,
+  fmtClock,
+  fmtElapsed,
+  fmtMinutes,
+  isRetro,
+  lastSetAt,
+} from '../components/app/workout-time';
+
+/** Futó óra az edzés kezdete óta (másodpercenként frissül). */
+function Elapsed({ since }: { since: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <span className="tabular-nums">{fmtElapsed((now - new Date(since).getTime()) / 1000)}</span>;
+}
 
 const RATINGS = [
   { value: 1, label: 'nagyon könnyű' },
@@ -17,7 +36,9 @@ const RATINGS = [
 
 export default function AppDay() {
   const { week, day } = useParams();
-  const { plan, logs, completeDay, setWorkoutDate, rateWorkout } = useSession();
+  const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout } = useSession();
+  const [search] = useSearchParams();
+  const jumpTo = search.get('sor');
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
   const log = planDay ? logs.find((l) => l.plan_day_id === planDay.id) : undefined;
 
@@ -27,6 +48,19 @@ export default function AppDay() {
   const [dateBusy, setDateBusy] = useState(false);
   // Szakaszok összecsukása: csak helyi állapot (szakasz sorszáma → zárva)
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+  // Lezáráskor, ha rég kezdte: rákérdezünk, mikor fejezte be
+  const [askEnd, setAskEnd] = useState(false);
+
+  // A számláló-sávról vagy az „Edzés folyamatban” sávról érkezve: a megadott gyakorlat első nem kész sorához görgetünk
+  useEffect(() => {
+    if (!jumpTo) return;
+    const id = window.setTimeout(() => {
+      const rows = Array.from(document.querySelectorAll<HTMLElement>(`[data-set-row][data-ex="${CSS.escape(jumpTo)}"]`));
+      const row = rows.find((r) => r.dataset.done !== 'true') ?? rows.at(-1);
+      row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [jumpTo]);
 
   if (!plan || !planDay) {
     return (
@@ -71,10 +105,38 @@ export default function AppDay() {
     }
   };
 
-  const finish = async () => {
+  const startedAt = log?.started_at ?? null;
+  const duration = durationOf(log);
+  const lastSet = lastSetAt(log);
+  const hasSets = !!lastSet;
+  const dayHref = `/app/d/${planDay.week}/${planDay.day}`;
+
+  const start = async () => {
+    try {
+      await startWorkout(planDay.id, new Date().toISOString());
+    } catch {
+      toast.error('Nem sikerült menteni. Próbáld újra.');
+    }
+  };
+
+  /** Lezárás. Ha a kezdés óta több mint 3 óra telt el, előbb rákérdezünk a befejezés idejére. */
+  const finish = async (endAt?: Date) => {
+    if (
+      !done &&
+      !endAt &&
+      startedAt &&
+      date === isoDay(new Date(startedAt)) &&
+      Date.now() - new Date(startedAt).getTime() > ASK_AFTER_HOURS * 3600_000
+    ) {
+      setAskEnd(true);
+      return;
+    }
+    setAskEnd(false);
     setBusy(true);
     try {
-      const ok = await completeDay(planDay.id, note.trim() === '' ? null : note.trim());
+      // Már lezárt edzésnél csak a jegyzet változik: a befejezés ideje marad
+      const at = done && log?.completed_at ? log.completed_at : (endAt ?? new Date()).toISOString();
+      const ok = await completeDay(planDay.id, note.trim() === '' ? null : note.trim(), at);
       if (ok && date && date !== todayIso() && date !== log?.performed_on) await setWorkoutDate(planDay.id, date);
       if (ok) toast.success(done ? 'Jegyzet frissítve.' : 'Edzés kész, szép munka!');
     } catch {
@@ -104,7 +166,7 @@ export default function AppDay() {
         <h1 className="mt-1 text-2xl font-bold leading-tight">
           {planDay.title ?? `${planDay.day}. edzés`}
         </h1>
-        <p className="mt-1 flex items-center gap-2 text-sm text-app-muted">
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-app-muted">
           {planDay.week}. hét · {planDay.day}. nap
           {done && (
             <span className="inline-flex items-center gap-1 font-semibold text-app-teal">
@@ -112,6 +174,32 @@ export default function AppDay() {
             </span>
           )}
         </p>
+        {done && duration && (
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-app-muted">
+            <Clock className="size-4" /> {fmtClock(duration.start)}–{fmtClock(duration.end)} · {fmtMinutes(duration.minutes)}
+          </p>
+        )}
+        {done && isRetro(log) && <p className="mt-1 text-xs text-app-muted">Utólag rögzítve (edzésidő nélkül)</p>}
+        {!done && startedAt && (
+          <p className="mt-3 flex items-center gap-2 rounded-[10px] border border-app-teal/40 bg-app-mint px-3 py-2 text-sm text-app-ink">
+            <Clock className="size-4 shrink-0" />
+            <span className="flex-1">
+              Edzés folyamatban · {fmtClock(new Date(startedAt))} óta
+            </span>
+            <strong className="text-base">
+              <Elapsed since={startedAt} />
+            </strong>
+          </p>
+        )}
+        {!done && !startedAt && !hasSets && date === todayIso() && (
+          <button
+            type="button"
+            onClick={() => void start()}
+            className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-app-teal text-base font-semibold text-white"
+          >
+            <Play className="size-4 fill-current" /> Edzés indítása
+          </button>
+        )}
         {progress.total > 0 && (
           <div className="mt-4">
             <p className="text-sm font-semibold">
@@ -207,6 +295,7 @@ export default function AppDay() {
                             plan={plan}
                             logs={logs}
                             detailsHref={hrefOf(it.id)}
+                            dayHref={dayHref}
                             marker={`${block.label}${i + 1}`}
                             embedded
                             groupKey={block.items[0].id}
@@ -223,6 +312,7 @@ export default function AppDay() {
                         plan={plan}
                         logs={logs}
                         detailsHref={hrefOf(it.id)}
+                        dayHref={dayHref}
                       />
                     ))
                   ),
@@ -283,9 +373,34 @@ export default function AppDay() {
           placeholder="Hogy ment? Fájdalom, nehézség, megjegyzés…"
           className="w-full rounded-[10px] border border-app-line bg-white p-3 text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal"
         />
+        {askEnd && startedAt && (
+          <div role="alert" className="space-y-2 rounded-[12px] border border-app-teal/40 bg-app-mint p-3 text-sm text-app-ink">
+            <p className="font-semibold">
+              {fmtClock(new Date(startedAt))} óta tart az edzés. Mikor fejezted be?
+            </p>
+            <div className="grid gap-2">
+              {lastSet && lastSet.getTime() > new Date(startedAt).getTime() && (
+                <button
+                  type="button"
+                  onClick={() => void finish(lastSet)}
+                  className="h-11 rounded-[10px] bg-app-teal px-3 font-semibold text-white"
+                >
+                  Az utolsó sorozatnál ({fmtClock(lastSet)})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => void finish(new Date())}
+                className="h-11 rounded-[10px] border border-app-line bg-white px-3 font-semibold"
+              >
+                Most ({fmtClock(new Date())})
+              </button>
+            </div>
+          </div>
+        )}
         <button
           type="button"
-          onClick={finish}
+          onClick={() => void finish()}
           disabled={busy}
           className={`h-12 w-full rounded-[12px] text-base font-semibold transition disabled:opacity-50 ${
             done ? 'border border-app-teal text-app-teal' : 'bg-app-teal text-white'

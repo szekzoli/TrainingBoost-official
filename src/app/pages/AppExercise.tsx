@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import ExerciseMedia from '../components/app/ExerciseMedia';
 import PrescriptionBar from '../components/app/PrescriptionBar';
-import { formatSet, previousSets } from '../components/app/plan-utils';
+import { formatSet, isBodyweight, previousSets, timedSpec } from '../components/app/plan-utils';
 
 export default function AppExercise() {
   const { week, day, dayExerciseId } = useParams();
@@ -76,7 +76,7 @@ export default function AppExercise() {
                 key={s.set_number}
                 className="rounded-[10px] border border-app-line px-3 py-1.5 text-sm text-app-muted"
               >
-                {s.set_number} · {formatSet(s)}
+                {s.set_number} · {formatSet(s, { timed: !!timedSpec(item.reps), bodyweight: isBodyweight(item) })}
               </li>
             ))}
           </ul>

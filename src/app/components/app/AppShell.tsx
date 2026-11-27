@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
 import './install-prompt';
 import { useMilestoneToasts } from './MilestoneList';
-import { CalendarDays, ClipboardList, Settings, TrendingUp, CloudOff } from 'lucide-react';
+import { CalendarDays, ChevronRight, ClipboardList, Clock, Settings, TrendingUp, CloudOff } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
-import { RestTimerProvider } from './RestTimer';
+import { RestTimerProvider, useRestTimer } from './RestTimer';
 import { SessionProvider, useSession } from './session';
+import { todayIso } from './dates';
+import { isInProgress, lastSetAt } from './workout-time';
 
 // 2. Az /app oldalak: noindex + no-referrer (az index.html korán beteszi, itt SPA-navigációra is biztosítjuk).
 function useAppHead() {
@@ -202,6 +204,48 @@ function OfflineBar() {
   );
 }
 
+/**
+ * „Edzés folyamatban” sáv: ha van elkezdett, le nem zárt mai edzés, és nem annak az oldalán vagyunk,
+ * alul egy keskeny sáv visz vissza. Amíg számláló fut, az ő sávja látszik (az is visszavisz).
+ */
+function InProgressBar() {
+  const { plan, logs, status } = useSession();
+  const { active } = useRestTimer();
+  const { pathname } = useLocation();
+  if (status !== 'ready' || !plan || active) return null;
+  const today = todayIso();
+  const running = logs
+    .filter((l) => isInProgress(l, today))
+    .sort((a, b) => {
+      const t = (l: typeof a) => Math.max(l.started_at ? Date.parse(l.started_at) : 0, lastSetAt(l)?.getTime() ?? 0);
+      return t(b) - t(a);
+    })[0];
+  if (!running) return null;
+  const day = plan.days.find((d) => d.id === running.plan_day_id);
+  if (!day) return null;
+  const href = `/app/d/${day.week}/${day.day}`;
+  if (pathname === href) return null;
+  // A legutóbb rögzített gyakorlathoz görgessen vissza
+  const lastRow = [...running.sets].sort((a, b) => a.logged_at.localeCompare(b.logged_at)).at(-1)?.day_exercise_id;
+  return (
+    <Link
+      to={lastRow ? `${href}?sor=${lastRow}` : href}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-app-teal/40 bg-app-mint/95 px-4 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2.5 text-app-ink backdrop-blur print:hidden"
+    >
+      <span className="mx-auto flex max-w-md items-center gap-3">
+        <Clock className="size-5 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs">Edzés folyamatban</span>
+          <span className="block truncate font-semibold">{day.title ?? `${day.week}. hét, ${day.day}. edzés`}</span>
+        </span>
+        <span className="inline-flex items-center text-sm font-semibold">
+          Vissza <ChevronRight className="size-4" />
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 function Frame() {
   const { dark } = usePrefs();
   const { status, code } = useSession();
@@ -255,6 +299,7 @@ function Frame() {
         <main className="mx-auto max-w-md px-4 pb-28 pt-6">
           <Gate />
         </main>
+        <InProgressBar />
       </RestTimerProvider>
     </div>
   );

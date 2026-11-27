@@ -3,23 +3,33 @@ import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Table2, Trophy } from 'lucide-react';
 import type { PlanData, SetLog, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
-import { formatSet, isSetDone } from '../components/app/plan-utils';
+import { formatSet, isBodyweight, isFlagged, isSetDone, timedSpec } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
 import { BodyWeightCard } from '../components/app/BodyWeightCard';
 import { MilestoneList } from '../components/app/MilestoneList';
+import { WorkoutTimeCard } from '../components/app/WorkoutTimeCard';
 
 type Session = { date: string; dayTitle: string; week: number; sets: SetLog[] };
-type ExerciseHistory = { id: string; name: string; sessions: Session[] };
+type ExerciseHistory = { id: string; name: string; sessions: Session[]; fmt: { timed: boolean; bodyweight: boolean } };
 
 /** Egy alkalom fő értéke a grafikonhoz: a legnagyobb súly, ha van, különben a legtöbb ismétlés. */
 const topWeight = (s: Session) => Math.max(...s.sets.map((x) => x.weight_kg ?? -1));
 const topReps = (s: Session) => Math.max(...s.sets.map((x) => x.reps ?? -1));
 
 function histories(plan: PlanData, logs: WorkoutLog[]): ExerciseHistory[] {
-  const rowInfo = new Map<string, { exId: string; name: string; dayTitle: string; week: number }>();
+  const rowInfo = new Map<
+    string,
+    { exId: string; name: string; dayTitle: string; week: number; fmt: { timed: boolean; bodyweight: boolean } }
+  >();
   for (const d of plan.days) {
     for (const e of d.exercises) {
-      rowInfo.set(e.id, { exId: e.exercise.id, name: e.exercise.name, dayTitle: d.title ?? `${d.day}. edzés`, week: d.week });
+      rowInfo.set(e.id, {
+        exId: e.exercise.id,
+        name: e.exercise.name,
+        dayTitle: d.title ?? `${d.day}. edzés`,
+        week: d.week,
+        fmt: { timed: !!timedSpec(e.reps), bodyweight: isBodyweight(e) },
+      });
     }
   }
   const map = new Map<string, ExerciseHistory>();
@@ -37,7 +47,7 @@ function histories(plan: PlanData, logs: WorkoutLog[]): ExerciseHistory[] {
         byEx.set(info.exId, sess);
       }
       sess.sets.push(s);
-      if (!map.has(info.exId)) map.set(info.exId, { id: info.exId, name: info.name, sessions: [] });
+      if (!map.has(info.exId)) map.set(info.exId, { id: info.exId, name: info.name, sessions: [], fmt: info.fmt });
     }
     for (const [exId, sess] of byEx) {
       sess.sets.sort((a, b) => a.set_number - b.set_number);
@@ -52,6 +62,7 @@ function best(h: ExerciseHistory): { label: string; date: string } | null {
   let top: { s: SetLog; date: string } | null = null;
   for (const sess of h.sessions) {
     for (const s of sess.sets) {
+      if (isFlagged(s)) continue; // a „nem szabályos” sorozat nem rekord
       const better =
         !top ||
         (s.weight_kg ?? -1) > (top.s.weight_kg ?? -1) ||
@@ -59,7 +70,7 @@ function best(h: ExerciseHistory): { label: string; date: string } | null {
       if (better) top = { s, date: sess.date };
     }
   }
-  return top ? { label: formatSet(top.s), date: top.date } : null;
+  return top ? { label: formatSet(top.s, h.fmt), date: top.date } : null;
 }
 
 function Sparkline({ values, className = '' }: { values: number[]; className?: string }) {
@@ -83,8 +94,8 @@ function Sparkline({ values, className = '' }: { values: number[]; className?: s
 
 function seriesOf(h: ExerciseHistory): { values: number[]; unit: string } {
   const weights = h.sessions.map(topWeight);
-  if (weights.some((w) => w > 0)) return { values: weights.filter((w) => w >= 0), unit: 'kg' };
-  return { values: h.sessions.map(topReps).filter((r) => r >= 0), unit: 'ism.' };
+  if (!h.fmt.bodyweight && weights.some((w) => w > 0)) return { values: weights.filter((w) => w >= 0), unit: 'kg' };
+  return { values: h.sessions.map(topReps).filter((r) => r >= 0), unit: h.fmt.timed ? 'mp' : 'ism.' };
 }
 
 function ExerciseDetail({ h }: { h: ExerciseHistory }) {
@@ -147,10 +158,21 @@ function ExerciseDetail({ h }: { h: ExerciseHistory }) {
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {s.sets.map((x) => (
                   <li key={x.set_number} className="rounded-[8px] border border-app-line px-2 py-1 text-xs text-app-muted">
-                    {x.set_number} · {formatSet(x)}
+                    {x.set_number} · {formatSet(x, h.fmt)}
                   </li>
                 ))}
               </ul>
+              {s.sets.some((x) => x.note?.trim()) && (
+                <ul className="mt-2 space-y-0.5 text-xs text-app-muted">
+                  {s.sets
+                    .filter((x) => x.note?.trim())
+                    .map((x) => (
+                      <li key={x.set_number}>
+                        ⚑ {x.set_number}. sorozat: {x.note}
+                      </li>
+                    ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
@@ -202,6 +224,8 @@ export default function AppProgress() {
         </span>
         <ChevronRight className="size-4 shrink-0 text-app-navy/50" />
       </Link>
+
+      <WorkoutTimeCard />
 
       <MilestoneList />
 

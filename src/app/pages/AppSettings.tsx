@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '../components/ui/alert-dialog';
 import { useSession } from '../components/app/session';
-import { usePrefs, type ThemePref } from '../components/app/prefs';
+import { usePrefs, type HrMode, type ThemePref } from '../components/app/prefs';
 import { CalendarReminderCard } from '../components/app/CalendarReminderCard';
 import { canPromptInstall, inAppBrowser, isStandalone, promptInstall, subscribeInstall } from '../components/app/install-prompt';
 import { InAppBrowserNote } from '../components/app/InAppBrowserNote';
@@ -23,6 +23,12 @@ const THEMES: { value: ThemePref; label: string }[] = [
   { value: 'light', label: 'Világos' },
   { value: 'dark', label: 'Sötét' },
   { value: 'system', label: 'Mint a telefon' },
+];
+
+const HR_MODES: { value: HrMode; label: string }[] = [
+  { value: 'auto', label: 'Ahol az edző kéri' },
+  { value: 'always', label: 'Mindenhol' },
+  { value: 'never', label: 'Sehol' },
 ];
 
 export default function AppSettings() {
@@ -42,7 +48,7 @@ export default function AppSettings() {
       toast.error('A másolás nem sikerült. Jelöld ki a linket, és másold kézzel.');
     }
   };
-  const { theme, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest } = usePrefs();
+  const { theme, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode } = usePrefs();
   const [busy, setBusy] = useState(false);
 
   const remove = async () => {
@@ -87,7 +93,8 @@ export default function AppSettings() {
           <span>
             <span className="block font-semibold">Pihenőidő-számláló</span>
             <span className="block text-sm text-app-navy/70">
-              Egy sorozat kipipálása után visszaszámol a pihenőből.
+              Egy sorozat kipipálása után visszaszámol a pihenőből. Az utolsó 5 másodpercben csippan, és amíg számol, a
+              képernyő nem alszik el. iPhone-on a néma kapcsoló a csippanást is elnémítja.
             </span>
           </span>
           <input
@@ -124,6 +131,31 @@ export default function AppSettings() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="space-y-3 border border-app-navy/15 p-4">
+        <div>
+          <h2 className="font-semibold">Pulzus rögzítése</h2>
+          <p className="text-sm text-app-navy/70">
+            A sorozatok mellett egy pulzus mező: ide írhatod, amit az órád a sorozat végén mutat.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Pulzus mező">
+          {HR_MODES.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              role="radio"
+              aria-checked={hrMode === m.value}
+              onClick={() => setHrMode(m.value)}
+              className={`min-h-11 rounded-[10px] border px-2 text-sm font-semibold ${
+                hrMode === m.value ? 'border-app-teal bg-app-mint text-app-ink' : 'border-app-line'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <CalendarReminderCard />
