@@ -12,11 +12,14 @@ type Saving = 'idle' | 'saving' | 'error';
 function ExerciseForm({
   initial,
   categories,
+  hrSupported,
   onClose,
   onSaved,
 }: {
   initial: Exercise | null;
   categories: string[];
+  /** A szerveren már van track_hr oszlop (a 009-es SQL lefutott). */
+  hrSupported: boolean;
   onClose: () => void;
   onSaved: (e: Exercise) => void;
 }) {
@@ -28,6 +31,9 @@ function ExerciseForm({
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '');
   const [imageBroken, setImageBroken] = useState(false);
   const [note, setNote] = useState(initial?.technique_note ?? '');
+  // Új gyakorlatnál a Kondi / intenzív kategória alapból kéri a pulzust
+  const [trackHr, setTrackHr] = useState<boolean | null>(initial ? (initial.track_hr ?? false) : null);
+  const trackHrValue = trackHr ?? category.trim() === 'Kondi / intenzív';
   const [state, setState] = useState<Saving>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +57,8 @@ function ExerciseForm({
       video_url: trimmedVideo || null,
       image_url: trimmedImage || null,
       technique_note: note.trim() || null,
+      // A 009-es SQL előtt a mező nem létezik: csak akkor küldjük, ha a szerver már ismeri
+      ...(hrSupported ? { track_hr: trackHrValue } : {}),
     };
     try {
       const saved = initial ? await api.updateExercise(initial.id, payload) : await api.createExercise(payload);
@@ -176,6 +184,23 @@ function ExerciseForm({
             </div>
           )}
         </div>
+
+        {hrSupported && (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4"
+              checked={trackHrValue}
+              onChange={(e) => setTrackHr(e.target.checked)}
+            />
+            <span>
+              <span className="font-semibold">Pulzus rögzítése</span>
+              <span className="block text-muted">
+                Az ügyfél-appban a sorozatok mellett pulzus mező is van (erő-állóképességi, állóképességi gyakorlatokhoz).
+              </span>
+            </span>
+          </label>
+        )}
 
         <label className="block text-sm font-semibold">
           Leírás, technika <span className="font-normal text-muted">(hosszabb szöveg is lehet; a sortörések megmaradnak)</span>
@@ -445,6 +470,11 @@ export default function Exercises() {
                 <tr key={i.id} className={`border-b border-line last:border-b-0 ${i.archived ? 'bg-canvas text-muted' : ''}`}>
                   <td className="px-4 py-3 font-semibold">
                     {i.name}
+                    {i.track_hr && (
+                      <span className="ml-2 rounded-full border border-teal/40 px-2 py-0.5 text-xs font-semibold text-teal" title="Pulzus rögzítése">
+                        ♥ pulzus
+                      </span>
+                    )}
                     {i.archived && (
                       <span className="ml-2 rounded-full border border-line px-2 py-0.5 text-xs font-semibold text-muted">
                         archivált
@@ -512,6 +542,7 @@ export default function Exercises() {
         <ExerciseForm
           initial={editing === 'new' ? null : editing}
           categories={categories}
+          hrSupported={(items ?? []).some((i) => i.track_hr !== undefined)}
           onClose={() => setEditing(null)}
           onSaved={(saved) => {
             setEditing(null);

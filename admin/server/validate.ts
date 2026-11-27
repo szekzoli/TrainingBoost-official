@@ -48,9 +48,20 @@ export type ExerciseInput = {
   muscle_group?: string | null;
   technique_note?: string | null;
   archived?: boolean;
+  track_hr?: boolean;
 };
 
-const EXERCISE_FIELDS = new Set(['name', 'category', 'equipment', 'muscle_group', 'video_url', 'image_url', 'technique_note', 'archived']);
+const EXERCISE_FIELDS = new Set([
+  'name',
+  'category',
+  'equipment',
+  'muscle_group',
+  'video_url',
+  'image_url',
+  'technique_note',
+  'archived',
+  'track_hr',
+]);
 
 // partial: szerkesztésnél (PATCH) csak a megadott mezők kerülnek vissza
 /** Kép link: csak https:// webcím (a böngészőben <img>-ként jelenik meg). */
@@ -116,6 +127,11 @@ export function parseExerciseInput(body: unknown, partial: boolean): ExerciseInp
   if ('archived' in b) {
     if (typeof b.archived !== 'boolean') throw new ValidationError('archived', 'Az archivált mező igaz/hamis lehet.');
     out.archived = b.archived;
+  }
+
+  if ('track_hr' in b) {
+    if (typeof b.track_hr !== 'boolean') throw new ValidationError('track_hr', 'A pulzus mező igaz/hamis lehet.');
+    out.track_hr = b.track_hr;
   }
 
   if (partial && Object.keys(out).length === 0) {

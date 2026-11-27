@@ -12,10 +12,13 @@ export type ExerciseRow = {
   image_url: string | null;
   technique_note: string | null;
   archived: boolean;
+  /** 009-es SQL: az ügyfél-app kérje a pulzust is. */
+  track_hr?: boolean;
   plan_count: number;
 };
 
-const COLUMNS = 'id, name, category, equipment, muscle_group, video_url, image_url, technique_note, archived';
+// Minden oszlop (a 009-es SQL előtt a track_hr még nincs meg, így a lista akkor is működik)
+const COLUMNS = '*';
 
 // Kis- és nagybetű különbség nélkül (az adatbázis lower(name) egyedi indexe a végső védelem).
 async function assertNameFree(db: SupabaseClient, name: string, exceptId?: string) {
@@ -45,6 +48,7 @@ export async function createExercise(db: SupabaseClient, body: unknown): Promise
       video_url: input.video_url ?? null,
       image_url: input.image_url ?? null,
       technique_note: input.technique_note ?? null,
+      ...(input.track_hr !== undefined ? { track_hr: input.track_hr } : {}),
     })
     .select(COLUMNS)
     .single();

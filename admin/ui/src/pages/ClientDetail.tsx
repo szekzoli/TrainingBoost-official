@@ -13,6 +13,21 @@ const fmtNum = (n: number | null) => (n === null ? '' : String(n).replace('.', '
 const fmtSet = (w: number | null, r: number | null) =>
   w !== null && r !== null ? `${fmtNum(w)} kg × ${r}` : w !== null ? `${fmtNum(w)} kg` : `× ${r}`;
 
+/** Egy rögzített sorozat: súly × ismétlés, pulzus, megjegyzés jele. */
+const fmtLogged = (s: ClientWorkout['sets'][number]) =>
+  `${fmtSet(s.weight_kg, s.reps)}${s.heart_rate ? ` ♥${s.heart_rate}` : ''}${s.note?.trim() ? ' ⚑' : ''}`;
+
+/** Edzésidő percben, ha elindította és lezárta ugyanazon a napon (10 perc – 5 óra); különben null (utólag rögzítve). */
+export function durationMinutes(w: ClientWorkout): number | null {
+  if (!w.started_at || !w.completed_at) return null;
+  const start = new Date(w.started_at);
+  const day = start.toLocaleDateString('sv-SE');
+  if (w.performed_on && w.performed_on.slice(0, 10) !== day) return null;
+  const m = Math.round((new Date(w.completed_at).getTime() - start.getTime()) / 60000);
+  return m >= 10 && m <= 300 ? m : null;
+}
+const fmtClock = (iso: string) => new Date(iso).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+
 /** Mikor volt az edzés (beállított nap, különben a befejezés vagy az első naplózás napja). */
 const dateOf = (w: ClientWorkout) => w.performed_on ?? w.completed_at ?? w.created_at;
 
@@ -55,7 +70,7 @@ function byExercise(workouts: ClientWorkout[]): ExerciseRow[] {
             : best,
         { w: null as number | null, r: null as number | null },
       );
-      row.sessions.push({ date: dateOf(w), top, sets: sets.map((s) => fmtSet(s.weight_kg, s.reps)).join(', ') });
+      row.sessions.push({ date: dateOf(w), top, sets: sets.map(fmtLogged).join(', ') });
     }
   }
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'hu'));
@@ -73,8 +88,10 @@ function WorkoutCard({ w }: { w: ClientWorkout }) {
       };
       groups.push(g);
     }
-    g.sets.push(fmtSet(s.weight_kg, s.reps));
+    g.sets.push(fmtLogged(s));
   }
+  const notes = w.sets.filter((s) => s.note?.trim());
+  const minutes = durationMinutes(w);
   return (
     <li className="rounded-[14px] border border-line bg-white p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -88,6 +105,13 @@ function WorkoutCard({ w }: { w: ClientWorkout }) {
           <span className="rounded-full border border-line px-2 py-0.5 text-xs font-semibold text-muted">elkezdett</span>
         )}
         <RatingBadge rating={w.rating} />
+        {minutes !== null && w.started_at && w.completed_at ? (
+          <span className="text-xs text-muted">
+            {fmtClock(w.started_at)}–{fmtClock(w.completed_at)} · {minutes} perc
+          </span>
+        ) : (
+          w.completed_at && <span className="text-xs text-muted">utólag rögzítve</span>
+        )}
         <span className="ml-auto text-xs text-muted">{w.plan_title}</span>
       </div>
       {w.note && (
@@ -109,6 +133,15 @@ function WorkoutCard({ w }: { w: ClientWorkout }) {
         </table>
       ) : (
         <p className="mt-2 text-sm text-muted">Nincs rögzített sorozat.</p>
+      )}
+      {notes.length > 0 && (
+        <ul className="mt-2 space-y-0.5 text-sm">
+          {notes.map((s) => (
+            <li key={`${s.exercise_id}-${s.set_number}`}>
+              ⚑ <span className="font-semibold">{s.exercise_name}</span>, {s.set_number}. sorozat: {s.note}
+            </li>
+          ))}
+        </ul>
       )}
     </li>
   );
@@ -193,6 +226,8 @@ export default function ClientDetail() {
   }
   if (!client || !workouts) return <p className="text-sm text-muted">Betöltés…</p>;
 
+  const timed = workouts.map(durationMinutes).filter((m): m is number => m !== null).slice(0, 10);
+  const avgMinutes = timed.length ? Math.round(timed.reduce((n, m) => n + m, 0) / timed.length) : null;
   const rated = workouts.filter((w) => w.rating).slice(0, 5);
   const avg = rated.length ? rated.reduce((n, w) => n + (w.rating ?? 0), 0) / rated.length : null;
   const tabClass = (on: boolean) =>
@@ -233,6 +268,10 @@ export default function ClientDetail() {
           </div>
           <div className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted">Utolsó edzés</div>
           <div className="mt-1 text-sm">{relDays(client.last_performed_on ?? client.last_activity)}</div>
+          <div className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted">Átlagos edzésidő</div>
+          <div className="mt-1 text-sm">
+            {avgMinutes !== null ? `${avgMinutes} perc (utolsó ${timed.length} mért edzés)` : '–'}
+          </div>
         </div>
         <div className="rounded-[14px] border border-line bg-white p-4">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted">Érzés (utolsó 5 értékelés)</div>

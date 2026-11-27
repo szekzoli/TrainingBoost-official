@@ -10,6 +10,8 @@ export type Exercise = {
   image_url: string | null;
   technique_note: string | null;
   archived: boolean;
+  /** Az ügyfél-app kérje a pulzust is (009-es SQL). */
+  track_hr?: boolean;
   plan_count: number;
 };
 
@@ -22,6 +24,7 @@ export type ExerciseInput = {
   image_url?: string | null;
   technique_note?: string | null;
   archived?: boolean;
+  track_hr?: boolean;
 };
 
 export type PlanSummary = {
@@ -130,6 +133,8 @@ export type ClientWorkout = {
   day: number;
   day_title: string | null;
   performed_on: string | null;
+  /** Mikor kezdte (009-es SQL). */
+  started_at?: string | null;
   completed_at: string | null;
   created_at: string;
   rating: number | null;
@@ -141,6 +146,8 @@ export type ClientWorkout = {
     set_number: number;
     weight_kg: number | null;
     reps: number | null;
+    note?: string | null;
+    heart_rate?: number | null;
     prescribed_sets: number;
     prescribed_reps: string;
     prescribed_resistance: string | null;
