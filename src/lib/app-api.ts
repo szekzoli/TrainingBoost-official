@@ -176,5 +176,8 @@ export const appApi = {
       throw e;
     }
   },
+  /** Egy rögzített edzés (a nap naplója a sorozataival) törlése. A 010-es SQL kell hozzá. */
+  deleteWorkout: (code: string, planDayId: string) =>
+    rpc<{ plan_day_id: string; deleted: boolean }>('app_delete_workout', { p_code: code, p_plan_day_id: planDayId }),
   deleteMyData: (code: string) => rpc<void>('app_delete_my_data', { p_code: code }),
 };

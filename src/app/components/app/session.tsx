@@ -75,6 +75,11 @@ type Session = {
   setWorkoutDate: (planDayId: string, date: string | null) => Promise<boolean>;
   /** Milyen nehéz volt az edzés (1–5) vagy null. */
   rateWorkout: (planDayId: string, rating: number | null) => Promise<boolean>;
+  /**
+   * A nap rögzített edzésének törlése (sorozatok, kezdés, lezárás, jegyzet). Csak nettel, és ha nincs
+   * várakozó módosítás (különben a várólista újra létrehozná). Hibánál AppApiError-t dob.
+   */
+  deleteWorkout: (planDayId: string) => Promise<void>;
   /** A személyes hozzáférési kód (a Beállításokban a saját link megjelenítéséhez). */
   code: string | null;
   /** Nincs kapcsolat a szerverrel (a helyi másolatból dolgozunk). */
@@ -480,6 +485,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [write],
   );
 
+  const deleteWorkout: Session['deleteWorkout'] = useCallback(
+    async (planDayId) => {
+      if (!code) throw new AppApiError('invalid_code');
+      if (outboxRef.current.length > 0) throw new AppApiError('network');
+      await appApi.deleteWorkout(code, planDayId);
+      setOffline(false);
+      setLogs((prev) => prev.filter((l) => l.plan_day_id !== planDayId));
+    },
+    [code],
+  );
+
   const logWeight: Session['logWeight'] = useCallback(
     async (date, weight) => {
       const r = await withConsent((c) => appApi.logWeight(c, date, weight));
@@ -550,6 +566,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       completeDay,
       setWorkoutDate,
       rateWorkout,
+      deleteWorkout,
       code: status === 'ready' ? code : null,
       offline,
       pending: outbox.length,
@@ -572,6 +589,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       completeDay,
       setWorkoutDate,
       rateWorkout,
+      deleteWorkout,
       code,
       offline,
       outbox,

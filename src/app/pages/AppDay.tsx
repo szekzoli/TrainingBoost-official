@@ -1,8 +1,21 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer } from 'lucide-react';
+import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
+import { AppApiError } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
+import { useRestTimer } from '../components/app/RestTimer';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, isoDay, todayIso, workoutDate } from '../components/app/dates';
@@ -36,7 +49,9 @@ const RATINGS = [
 
 export default function AppDay() {
   const { week, day } = useParams();
-  const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout } = useSession();
+  const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout, deleteWorkout } = useSession();
+  const timer = useRestTimer();
+  const [deleting, setDeleting] = useState(false);
   const [search] = useSearchParams();
   const jumpTo = search.get('sor');
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
@@ -143,6 +158,30 @@ export default function AppDay() {
       toast.error('Nem sikerült menteni. Próbáld újra.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Az edzés törlése (megerősítés után). Net kell hozzá, és nem lehet várakozó módosítás. */
+  const removeWorkout = async () => {
+    setDeleting(true);
+    try {
+      timer.stop(); // egy futó időmérés ne mentsen bele az éppen törölt edzésbe
+      await deleteWorkout(planDay.id);
+      setNote('');
+      setDate(todayIso());
+      setAskEnd(false);
+      toast.success('Az edzés törölve.');
+    } catch (e) {
+      const kind = e instanceof AppApiError ? e.kind : 'other';
+      toast.error(
+        kind === 'network'
+          ? 'Az edzés törléséhez internet kell (és hogy minden korábbi módosítás felmenjen). Próbáld újra kicsit később.'
+          : kind === 'missing_function'
+            ? 'A törlés a szerveren még nincs bekapcsolva (010-es SQL).'
+            : 'Nem sikerült törölni. Próbáld újra.',
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -408,6 +447,32 @@ export default function AppDay() {
         >
           {busy ? 'Mentés…' : done ? 'Jegyzet mentése' : 'Edzés kész'}
         </button>
+        {log && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                disabled={deleting}
+                className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-semibold text-red-700 disabled:opacity-50 dark:text-red-400"
+              >
+                <Trash2 className="size-4" /> {deleting ? 'Törlés…' : 'Edzés törlése'}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Törlöd ezt az edzést?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  A nap összes rögzített sorozata, a kezdés és a lezárás ideje, a nehézség és a jegyzet is törlődik. Ez
+                  nem visszavonható. A terv nem változik, a napot újra elvégezheted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Mégsem</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void removeWorkout()}>Igen, törlöm</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </section>
     </div>
   );
