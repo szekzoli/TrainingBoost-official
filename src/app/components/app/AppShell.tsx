@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router-dom';
 import './install-prompt';
 import { useMilestoneToasts } from './MilestoneList';
-import { CalendarDays, ChevronRight, ClipboardList, Clock, Settings, TrendingUp, CloudOff } from 'lucide-react';
+import { CalendarDays, ChevronRight, CircleHelp, ClipboardList, Clock, Settings, TrendingUp, CloudOff } from 'lucide-react';
 import ConsentScreen from './ConsentScreen';
 import { PrefsProvider, usePrefs } from './prefs';
 import { RestTimerProvider, useRestTimer } from './RestTimer';
@@ -286,6 +286,9 @@ function Frame() {
                   </HeaderLink>
                   <HeaderLink to="/app/haladas" label="Haladás">
                     <TrendingUp className="size-5" />
+                  </HeaderLink>
+                  <HeaderLink to="/app/sugo" label="Hogyan használd">
+                    <CircleHelp className="size-5" />
                   </HeaderLink>
                 </>
               )}

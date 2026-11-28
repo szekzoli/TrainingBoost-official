@@ -1,7 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,6 +68,17 @@ export default function AppSettings() {
         <ChevronLeft className="size-4" /> Vissza
       </Link>
       <h1 className="text-2xl font-bold">Beállítások</h1>
+
+      <Link
+        to="/app/sugo"
+        className="flex min-h-14 items-center justify-between gap-3 border border-app-navy/15 px-4 py-3 font-semibold"
+      >
+        <span>
+          Hogyan használd
+          <span className="block text-sm font-normal text-app-navy/70">Rögzítés, pihenő, időmérés, haladás, megosztás</span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-app-navy/50" />
+      </Link>
 
       <section className="space-y-3 border border-app-navy/15 p-4">
         <h2 className="font-semibold">Megjelenés</h2>
