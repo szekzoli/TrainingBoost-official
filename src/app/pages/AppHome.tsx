@@ -15,6 +15,10 @@ export default function AppHome() {
   const weeks = weeksOf(plan);
   const total = plan.days.length;
   const done = plan.days.filter((d) => isDayDone(logs, d.id)).length;
+  // Lezárt edzések napjaként (ismétléssel együtt): csak akkor látszik, ha több, mint a kész napok
+  const dayIds = new Set(plan.days.map((d) => d.id));
+  const workoutsOf = (ids: Set<string>) => logs.filter((l) => l.completed_at && ids.has(l.plan_day_id)).length;
+  const totalWorkouts = workoutsOf(dayIds);
   const next = plan.days.find((d) => !isDayDone(logs, d.id));
   const lastDone = logs
     .filter((l) => l.completed_at)
@@ -61,9 +65,12 @@ export default function AppHome() {
 
       <section className="border border-app-navy/15 p-4">
         <div className="flex items-baseline justify-between text-sm">
-          <span className="font-semibold">Haladás</span>
+          <span className="font-semibold">
+            Haladás
+            {totalWorkouts > done && <span className="font-normal text-app-navy/70"> · {totalWorkouts} edzés</span>}
+          </span>
           <span className="text-app-navy/70">
-            {done} / {total} edzés kész
+            {done} / {total} nap kész
           </span>
         </div>
         <div
@@ -113,6 +120,7 @@ export default function AppHome() {
           {weeks.map(({ week, days }) => {
             const weekDone = days.filter((d) => isDayDone(logs, d.id)).length;
             const complete = weekDone === days.length;
+            const weekWorkouts = workoutsOf(new Set(days.map((d) => d.id)));
             return (
               <li key={week}>
                 <Link
@@ -130,6 +138,7 @@ export default function AppHome() {
                   <span className="flex items-center gap-2 text-sm text-app-navy/70">
                     {complete && <Check className="size-4 text-app-teal" aria-label="Kész" />}
                     {weekDone} / {days.length}
+                    {weekWorkouts > weekDone && <span className="text-xs text-app-navy/50">· {weekWorkouts} edzés</span>}
                     <ChevronRight className="size-4" />
                   </span>
                 </Link>
