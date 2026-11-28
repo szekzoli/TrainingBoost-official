@@ -1,7 +1,7 @@
-// Áttekintés: mit kell ma csinálni? Esedékes új tervek, inaktív ügyfelek, legutóbbi aktivitás, sablonok.
+// Áttekintés: mit kell ma csinálni? Figyelendő edzések, esedékes új tervek, inaktív ügyfelek, legutóbbi aktivitás, sablonok.
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, errorMessage, type ClientRow, type PlanSummary } from '../api';
+import { api, errorMessage, type AttentionItem, type ClientRow, type PlanSummary } from '../api';
 import { DueBadge, ProgressCell, daysUntil, fmtDay, relDays } from '../components/ClientBits';
 import { btn, btnGhost } from '../lib/util';
 
@@ -52,6 +52,145 @@ function ClientLine({ c, extra }: { c: ClientRow; extra: React.ReactNode }) {
       </div>
       <div className="w-36 shrink-0 text-right">{extra}</div>
     </li>
+  );
+}
+
+const RATING_TEXT: Record<number, string> = { 1: 'nagyon könnyű', 5: 'nagyon nehéz' };
+
+/** Címke a jelzés fajtájához: a fájdalom pirossal, a többi semleges. */
+function Flag({ text, strong }: { text: string; strong?: boolean }) {
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+        strong ? 'border-danger/40 bg-danger-soft text-danger' : 'border-line bg-canvas text-navy'
+      }`}
+    >
+      {text}
+    </span>
+  );
+}
+
+const hasPain = (s: string | null | undefined) => !!s && /fájt|fáj|fájdal/i.test(s);
+const fmtKg = (w: number | null) => (w === null ? null : `${String(w).replace('.', ',')} kg`);
+
+/**
+ * Figyelendő: az ügyfelek jelzésértékű edzései (sorozat-megjegyzés, nagyon nehéz / könnyű értékelés,
+ * edzés-jegyzet), amíg „Láttam”-ra nem jelölöd. Az ügyfélnek nincs vele teendője.
+ */
+function AttentionCard() {
+  const [items, setItems] = useState<AttentionItem[] | null>(null);
+  const [available, setAvailable] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api.listAttention();
+      setItems(r.items);
+      setAvailable(r.available);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err));
+      setItems([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const seen = async (ids: string[]) => {
+    setBusy(true);
+    try {
+      await api.markReviewed(ids);
+      setItems((prev) => (prev ?? []).filter((i) => !ids.includes(i.workout_log_id)));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!available) {
+    return (
+      <Card title="Figyelendő">
+        <p className="text-sm text-muted">A lista a 011-figyelendo.sql lefuttatása után működik (Supabase SQL Editor).</p>
+      </Card>
+    );
+  }
+
+  const list = items ?? [];
+  return (
+    <Card
+      title={`Figyelendő${list.length ? ` (${list.length})` : ''}`}
+      action={
+        list.length > 1 ? (
+          <button
+            type="button"
+            className="text-xs font-semibold text-teal hover:underline disabled:opacity-40"
+            disabled={busy}
+            onClick={() => void seen(list.slice(0, 200).map((i) => i.workout_log_id))}
+          >
+            Mind láttam
+          </button>
+        ) : undefined
+      }
+    >
+      {error && (
+        <p role="alert" className="mb-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+      {!items ? (
+        <p className="text-sm text-muted">Betöltés…</p>
+      ) : list.length === 0 ? (
+        <p className="text-sm text-muted">Nincs új jelzés. A „fájt” címkés vagy megjegyzéses sorozat, a nagyon nehéz vagy könnyű edzés és az edzés-jegyzet kerül ide.</p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {list.map((it) => {
+            const pain = hasPain(it.note) || it.sets.some((s) => hasPain(s.note));
+            const date = it.performed_on ?? it.completed_at ?? it.last_change;
+            return (
+              <li key={it.workout_log_id} className="flex gap-4 py-3">
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to={`/ugyfel/${it.client_id}`} className="font-semibold hover:text-teal hover:underline">
+                      {it.client_label}
+                    </Link>
+                    <span className="text-xs text-muted">
+                      {fmtDay(date)} · {it.week}. hét · {it.day_title || `${it.day}. nap`}
+                    </span>
+                    {pain && <Flag text="fájdalom" strong />}
+                    {it.rating && RATING_TEXT[it.rating] && <Flag text={RATING_TEXT[it.rating]} />}
+                  </div>
+                  {it.sets.length > 0 && (
+                    <ul className="space-y-0.5 text-sm">
+                      {it.sets.map((s) => (
+                        <li key={`${s.position}-${s.set_number}`}>
+                          <span className="font-semibold">{s.exercise_name}</span>
+                          <span className="text-muted">
+                            {' '}
+                            · {s.set_number}. sorozat
+                            {[fmtKg(s.weight_kg), s.reps !== null ? `× ${s.reps}` : null].filter(Boolean).length
+                              ? ` · ${[fmtKg(s.weight_kg), s.reps !== null ? `× ${s.reps}` : null].filter(Boolean).join(' ')}`
+                              : ''}
+                          </span>
+                          : <span className={hasPain(s.note) ? 'font-semibold text-danger' : ''}>„{s.note}”</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {it.note && <p className="text-sm italic text-navy/80">Edzés-jegyzet: „{it.note}”</p>}
+                </div>
+                <button type="button" className={`${btn} shrink-0 self-start`} disabled={busy} onClick={() => void seen([it.workout_log_id])}>
+                  Láttam
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
   );
 }
 
@@ -123,6 +262,8 @@ export default function Dashboard() {
         <Stat label="sablon" value={templates.length} to="/sablonok" />
         <Stat label="terv" value={plans.length} to="/tervek" />
       </div>
+
+      <AttentionCard />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card

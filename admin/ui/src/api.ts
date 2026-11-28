@@ -172,6 +172,23 @@ export type ClientPatch = {
   coach_note?: string | null;
 };
 
+export type AttentionItem = {
+  workout_log_id: string;
+  client_id: string;
+  client_label: string;
+  plan_id: string;
+  week: number;
+  day: number;
+  day_title: string | null;
+  performed_on: string | null;
+  completed_at: string | null;
+  rating: number | null;
+  note: string | null;
+  sets: { exercise_name: string; position: number; set_number: number; weight_kg: number | null; reps: number | null; note: string }[];
+  last_change: string;
+  reviewed_at: string | null;
+};
+
 export type Status = { configured: true } | { configured: false; problems: string[] };
 
 export class ApiFailure extends Error {
@@ -257,6 +274,9 @@ export const api = {
     request<{ client: ClientRow & { log_count: number } }>('GET', `/api/clients/${id}`).then((r) => r.client),
   createClient: (input: ClientCreateInput) =>
     request<{ client: ClientRow; link: string; created_plan_id: string | null }>('POST', '/api/clients', input),
+  // Figyelendő (011-figyelendo.sql); available: false, ha a migráció még nem futott
+  listAttention: () => request<{ items: AttentionItem[]; available: boolean }>('GET', '/api/attention'),
+  markReviewed: (ids: string[]) => request<{ count: number }>('POST', '/api/attention/seen', { ids }),
   getClientDetail: (id: string) =>
     request<{ client: ClientRow; workouts: ClientWorkout[]; weights?: BodyWeight[] }>('GET', `/api/clients/${id}/detail`),
   regenerateLink: (id: string) => request<{ client: ClientRow; link: string }>('POST', `/api/clients/${id}/new-link`, {}),

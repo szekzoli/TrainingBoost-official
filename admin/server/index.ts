@@ -18,6 +18,7 @@ import {
   updatePlan,
 } from './plans.ts';
 import { ValidationError } from './validate.ts';
+import { listAttention, markReviewed } from './attention.ts';
 
 const ALLOWED_ORIGINS = new Set([`http://${HOST}:${UI_PORT}`, `http://localhost:${UI_PORT}`]);
 const ALLOWED_HOSTNAMES = new Set([HOST, 'localhost']);
@@ -183,6 +184,16 @@ async function route(ctx: Ctx): Promise<{ status: number; body?: unknown }> {
   if ((m = matchPath(path, '/api/clients/:id/new-link'))) {
     if (method !== 'POST') throw noMethod();
     return { status: 200, body: await regenerateLink(db, m[1], ctx.baseUrl) };
+  }
+
+  // --- Figyelendő (011-figyelendo.sql)
+  if (path === '/api/attention') {
+    if (method !== 'GET') throw noMethod();
+    return { status: 200, body: await listAttention(db) };
+  }
+  if (path === '/api/attention/seen') {
+    if (method !== 'POST') throw noMethod();
+    return { status: 200, body: await markReviewed(db, await readJson(req)) };
   }
 
   // --- Napok és gyakorlat-sorok
