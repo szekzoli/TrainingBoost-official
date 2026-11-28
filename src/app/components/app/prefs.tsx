@@ -18,12 +18,16 @@ type Prefs = {
   setDefaultRest: (sec: number) => void;
   hrMode: HrMode;
   setHrMode: (m: HrMode) => void;
+  /** Mérföldkövek (lista a Haladásban és gratuláció) be/ki. */
+  milestones: boolean;
+  setMilestones: (on: boolean) => void;
 };
 
 const THEME_KEY = 'tb_app_theme';
 const TIMER_KEY = 'tb_app_rest_timer';
 const DEFAULT_REST_KEY = 'tb_app_default_rest';
 const HR_KEY = 'tb_app_hr_mode';
+const MILESTONES_KEY = 'tb_app_milestones';
 
 function read(key: string): string | null {
   try {
@@ -59,6 +63,7 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   });
   const [sysDark, setSysDark] = useState(systemDark);
   const [restTimer, setRestTimerState] = useState(() => read(TIMER_KEY) !== 'off');
+  const [milestones, setMilestonesState] = useState(() => read(MILESTONES_KEY) !== 'off');
   const [defaultRest, setDefaultRestState] = useState(() => {
     const n = Number(read(DEFAULT_REST_KEY));
     return Number.isFinite(n) && n > 0 && n <= 600 ? n : 0;
@@ -81,6 +86,11 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
     setThemeState(t);
     write(THEME_KEY, t);
   }, []);
+  const setMilestones = useCallback((on: boolean) => {
+    setMilestonesState(on);
+    write(MILESTONES_KEY, on ? 'on' : 'off');
+  }, []);
+
   const setRestTimer = useCallback((on: boolean) => {
     setRestTimerState(on);
     write(TIMER_KEY, on ? 'on' : 'off');
@@ -119,8 +129,20 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   }, [dark]);
 
   const value = useMemo(
-    () => ({ theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode }),
-    [theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode],
+    () => ({
+      theme,
+      dark,
+      setTheme,
+      restTimer,
+      setRestTimer,
+      defaultRest,
+      setDefaultRest,
+      hrMode,
+      setHrMode,
+      milestones,
+      setMilestones,
+    }),
+    [theme, dark, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode, milestones, setMilestones],
   );
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;
 }

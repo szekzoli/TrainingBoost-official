@@ -48,7 +48,8 @@ export default function AppSettings() {
       toast.error('A másolás nem sikerült. Jelöld ki a linket, és másold kézzel.');
     }
   };
-  const { theme, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode } = usePrefs();
+  const { theme, setTheme, restTimer, setRestTimer, defaultRest, setDefaultRest, hrMode, setHrMode, milestones, setMilestones } =
+    usePrefs();
   const [busy, setBusy] = useState(false);
 
   const remove = async () => {
@@ -131,6 +132,23 @@ export default function AppSettings() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="border border-app-navy/15 p-4">
+        <label className="flex items-center justify-between gap-4">
+          <span>
+            <span className="block font-semibold">Mérföldkövek</span>
+            <span className="block text-sm text-app-navy/70">
+              A Haladás oldalon a mérföldkövek listája, és gratuláció, amikor elérsz egyet.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={milestones}
+            onChange={(e) => setMilestones(e.target.checked)}
+            className="size-6 shrink-0 accent-[var(--color-app-teal)]"
+          />
+        </label>
       </section>
 
       <section className="space-y-3 border border-app-navy/15 p-4">

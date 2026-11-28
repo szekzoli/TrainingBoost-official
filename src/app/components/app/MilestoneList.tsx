@@ -4,15 +4,20 @@ import { toast } from 'sonner';
 import { Award, Lock } from 'lucide-react';
 import { useSession } from './session';
 import { computeMilestones, loadSeen, saveSeen } from './milestones';
+import { usePrefs } from './prefs';
 
-/** Új mérföldkő elérésekor rövid gratuláció. Az első megnyitáskor a már elérteket csendben megjegyzi. */
+/**
+ * Új mérföldkő elérésekor rövid gratuláció. Az első megnyitáskor a már elérteket csendben megjegyzi.
+ * Kikapcsolt mérföldköveknél is megjegyzi őket (csendben), hogy visszakapcsoláskor ne jöjjön egy csomó gratuláció.
+ */
 export function useMilestoneToasts() {
   const { status, code, plan, logs, weights } = useSession();
+  const { milestones: enabled } = usePrefs();
   useEffect(() => {
     if (status !== 'ready' || !code || !plan) return;
     const done = computeMilestones(plan, logs, weights).filter((m) => m.done);
     const seen = loadSeen(code);
-    if (!seen) {
+    if (!seen || !enabled) {
       saveSeen(code, new Set(done.map((m) => m.id)));
       return;
     }
@@ -23,14 +28,15 @@ export function useMilestoneToasts() {
     }
     for (const m of fresh) seen.add(m.id);
     saveSeen(code, seen);
-  }, [status, code, plan, logs, weights]);
+  }, [status, code, plan, logs, weights, enabled]);
 }
 
 export function MilestoneList() {
   const { plan, logs, weights } = useSession();
+  const { milestones: enabled } = usePrefs();
   const [all, setAll] = useState(false);
   const items = useMemo(() => (plan ? computeMilestones(plan, logs, weights) : []), [plan, logs, weights]);
-  if (items.length === 0) return null;
+  if (!enabled || items.length === 0) return null;
   const done = items.filter((m) => m.done);
   const next = items.filter((m) => !m.done);
   const shownDone = all ? [...done].reverse() : [...done].reverse().slice(0, 4);
