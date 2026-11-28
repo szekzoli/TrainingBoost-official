@@ -53,7 +53,7 @@ function parseHr(s: string): number | null | 'invalid' {
 }
 
 /** Gyors címkék a sorozat-megjegyzéshez. */
-const NOTE_TAGS = ['nem szabályos', 'segítséggel', 'fájt', 'könnyű volt'];
+const NOTE_TAGS = ['nem szabályos', 'segítséggel', 'fájt'];
 
 /** Címke be/ki a megjegyzés szövegében (vesszővel elválasztva). */
 function toggleTag(note: string, tag: string): string {
@@ -139,9 +139,15 @@ function SetRow({
   prevToday,
   bestBefore,
   fillTick,
+  prevDone,
+  nextDone,
 }: {
   cfg: RowConfig;
   setNumber: number;
+  /** Az előző sorozat kész-e (az elsőnél mindig igaz): csak sorban lehet kipipálni, lyuk nélkül. */
+  prevDone: boolean;
+  /** A következő sorozat kész-e: ilyenkor ez a sor nem vonható vissza (különben lyuk maradna). */
+  nextDone: boolean;
   saved: SetLog | undefined;
   /** A múltkori alkalom ugyanezen sorozata. */
   prev: SetLog | undefined;
@@ -254,8 +260,15 @@ function SetRow({
       }${cfg.showHr ? ', pulzushoz 30–250' : ''} kell.`,
     );
 
+  /** Sorrend: az előző sorozat nélkül ez nem pipálható ki. */
+  const outOfOrder = () => {
+    if (prevDone) return false;
+    toast.info(`Előbb a ${setNumber - 1}. sorozatot pipáld ki.`);
+    return true;
+  };
+
   const check = async (skipWeightCheck = false) => {
-    if (saving) return;
+    if (saving || outOfOrder()) return;
     const { w, r, h } = read();
     if (w === 'invalid' || r === 'invalid' || h === 'invalid') {
       invalidMsg();
@@ -282,6 +295,10 @@ function SetRow({
   const toggle = async () => {
     if (saving) return;
     if (done) {
+      if (nextDone) {
+        toast.info(`Előbb a ${setNumber + 1}. sorozatot vond vissza.`);
+        return;
+      }
       setWeight('');
       setReps('');
       timer.stop();
@@ -293,7 +310,7 @@ function SetRow({
 
   /** Időre menő sorozat indítása: a számláló végén magától mentődik. */
   const startTimed = () => {
-    if (!cfg.timed || saving) return;
+    if (!cfg.timed || saving || outOfOrder()) return;
     const w = parseWeight(weight, cfg.bodyweight);
     if (w === 'invalid') {
       invalidMsg();
@@ -326,6 +343,12 @@ function SetRow({
       return;
     }
     const weightCleared = w === null && saved.weight_kg !== null && cfg.expectsWeight;
+    if ((r === null || weightCleared) && nextDone) {
+      // Kitörölt érték egy közbülső sorozatnál: nem vonjuk vissza, mert lyuk maradna
+      restore();
+      toast.info('Kész sorozat közbülső értéke nem lehet üres. Írd át, vagy előbb a későbbi sorozatokat vond vissza.');
+      return;
+    }
     if (r === null || weightCleared) {
       setMissing({ r: r === null, w: weightCleared });
       timer.stop();
@@ -402,6 +425,14 @@ function SetRow({
           aria-label={`${setNumber}. sorozat ${cfg.timed ? 'idő (mp)' : 'ismétlés'}`}
           placeholder={repsPh}
           value={reps}
+          onFocus={(e) => {
+            // Időre menő sorozat ▶ nélkül: a tervezett idő bekerül (kijelölve, felülírható), és a gomb ✓ lesz
+            if (cfg.timed && !done && reps === '' && repsPh) {
+              setReps(repsPh);
+              const el = e.currentTarget;
+              window.setTimeout(() => el.select(), 0);
+            }
+          }}
           onChange={valueChanged(setReps)}
           onBlur={() => void commitEdit()}
           className={inputClass(!!missing.r)}
@@ -423,7 +454,9 @@ function SetRow({
             onClick={startTimed}
             disabled={saving}
             aria-label={`${setNumber}. sorozat: időmérés indítása`}
-            className="flex size-11 items-center justify-center rounded-[10px] border border-app-teal bg-app-mint text-app-teal transition disabled:opacity-50"
+            className={`flex size-11 items-center justify-center rounded-[10px] border border-app-teal bg-app-mint text-app-teal transition disabled:opacity-50 ${
+              prevDone ? '' : 'opacity-40'
+            }`}
           >
             <Play className="size-5 fill-current" />
           </button>
@@ -435,7 +468,7 @@ function SetRow({
             aria-pressed={done}
             aria-label={done ? `${setNumber}. sorozat kész, visszavonás` : `${setNumber}. sorozat kész`}
             className={`flex size-11 items-center justify-center rounded-[10px] border transition disabled:opacity-50 ${
-              done ? 'border-app-teal bg-app-teal text-white' : 'border-app-line bg-white text-app-navy/30'
+              done ? 'border-app-teal bg-app-teal text-white' : `border-app-line bg-white text-app-navy/30 ${prevDone ? '' : 'opacity-40'}`
             }`}
           >
             <Check className="size-5" strokeWidth={3} />
@@ -672,6 +705,8 @@ export default function ExerciseCard({
                 prevToday={before}
                 bestBefore={bestWeight(plan, logs, item.exercise.id, { dayExerciseId: item.id, setNumber: n })}
                 fillTick={fillTick}
+                prevDone={n === 1 || isSetDone(savedOf(n - 1))}
+                nextDone={n < item.sets && isSetDone(savedOf(n + 1))}
               />
             );
           })}
