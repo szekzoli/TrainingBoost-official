@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, History, Info, Play, TrendingUp } from 'lucide-react';
+import { Check, History, Info, Play } from 'lucide-react';
 import type { PlanData, PlanExercise, SetLog, WorkoutLog } from '../../../lib/app-api';
 import { getVideoEmbedUrl } from '../../../lib/video';
 import PrescriptionBar from './PrescriptionBar';
@@ -18,7 +18,6 @@ import {
   isLoggable,
   isSetDone,
   previousSets,
-  progressionTip,
   repsPlaceholder,
   timedSpec,
   weightPlaceholder,
@@ -574,10 +573,8 @@ export default function ExerciseCard({
   const hasDetails = hasVideo || !!image || !!item.note?.trim() || !!item.exercise.technique_note?.trim();
   const timed = timedSpec(item.reps);
   const bodyweight = isBodyweight(item);
-  const tip = progressionTip(item, prev);
   const showHr = hrMode === 'always' || (hrMode === 'auto' && !!item.exercise.track_hr);
-  // Ha legutóbb megvolt minden sorozat a felső ismétlésszámmal, a súly javaslata a megemelt érték
-  const planWeight = tip ? fmtWeight(tip.to) : weightPlaceholder(item.resistance);
+  const planWeight = weightPlaceholder(item.resistance);
   const planReps = timed ? (timed.phases[0] ? String(timed.phases[0].seconds) : '') : repsPlaceholder(item.reps);
   const [fillTick, setFillTick] = useState(0);
   const hasPrev = prev.size > 0;
@@ -657,15 +654,6 @@ export default function ExerciseCard({
 
       <PrescriptionBar item={item} />
 
-      {isLoggable(item) && tip && (
-        <p className="mx-3 mt-3 flex items-start gap-2 rounded-[10px] border border-app-teal/40 bg-app-mint px-3 py-2 text-xs text-app-ink">
-          <TrendingUp className="mt-0.5 size-4 shrink-0" />
-          <span>
-            Múltkor minden sorozat megvolt a felső ismétlésszámmal ({fmtWeight(tip.from)} kg). Próbáld meg{' '}
-            <strong>{fmtWeight(tip.to)} kg</strong>-mal, ha a technika rendben van.
-          </span>
-        </p>
-      )}
 
       {isLoggable(item) && (
         <div className="space-y-1 px-3 py-3">
