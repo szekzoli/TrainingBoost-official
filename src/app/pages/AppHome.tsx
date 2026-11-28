@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { NextWorkoutButton } from '../components/app/NextWorkoutButton';
 import { CalendarDays, Check, ChevronRight, ClipboardList, TrendingUp } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import { isDayDone, weeksOf } from '../components/app/plan-utils';
@@ -79,12 +80,7 @@ export default function AppHome() {
         </div>
         {lastDone && <p className="mt-2 text-xs text-app-navy/60">Utolsó edzés: {fmtDayShort(lastDone)}</p>}
         {next ? (
-          <Link
-            to={`/app/d/${next.week}/${next.day}`}
-            className="mt-4 flex h-12 items-center justify-center rounded-lg bg-app-navy text-base font-semibold text-white"
-          >
-            Következő: {next.week}. hét · {next.title ?? `${next.day}. nap`}
-          </Link>
+          <NextWorkoutButton day={next} className="mt-4" />
         ) : (
           total > 0 && (
             <p className="mt-4 rounded-lg border border-app-teal px-4 py-3 text-center text-sm font-semibold text-app-teal">

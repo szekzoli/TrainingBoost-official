@@ -1,6 +1,7 @@
 // Naptár: mikor edzett az ügyfél. A napra koppintva látszanak az aznapi edzések, és megnyithatók.
 // Alatta a korábbi edzések listája (legújabb elöl): dátum, nap, kezdés–vége, időtartam, nehézség.
 import { useMemo, useState } from 'react';
+import { NextWorkoutButton } from '../components/app/NextWorkoutButton';
 import { Link } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import type { PlanDay, WorkoutLog } from '../../lib/app-api';
@@ -231,12 +232,7 @@ export default function AppCalendar() {
       )}
 
       {next && (
-        <Link
-          to={`/app/d/${next.week}/${next.day}`}
-          className="flex h-12 items-center justify-center rounded-lg bg-app-navy text-base font-semibold text-white"
-        >
-          Következő: {next.week}. hét · {next.title ?? `${next.day}. nap`}
-        </Link>
+        <NextWorkoutButton day={next} />
       )}
 
       {history.length > 0 && (
