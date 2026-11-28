@@ -24,6 +24,8 @@ const AppCalendar = lazy(() => import('./pages/AppCalendar'));
 const AppProgress = lazy(() => import('./pages/AppProgress'));
 const AppProgram = lazy(() => import('./pages/AppProgram'));
 const AppSummary = lazy(() => import('./pages/AppSummary'));
+// Morning Boost tagok saját bérlete (a tracker adataiból)
+const PassPage = lazy(() => import('./pages/PassPage'));
 
 export default function App() {
   return (
@@ -56,6 +58,7 @@ export default function App() {
           <Route path="haladas" element={<Suspense fallback={null}><AppProgress /></Suspense>} />
           <Route path="haladas/:exerciseId" element={<Suspense fallback={null}><AppProgress /></Suspense>} />
         </Route>
+        <Route path="/berlet/:token" element={<Suspense fallback={null}><PassPage /></Suspense>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
     </BrowserRouter>

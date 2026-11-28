@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/app-apple-touch-icon.png" />
     <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
     <script>
-      if (location.pathname.indexOf('/app') === 0) {
+      if (location.pathname.indexOf('/app') === 0 || location.pathname.indexOf('/berlet/') === 0) {
         var robots = document.createElement('meta');
         robots.name = 'robots'; robots.content = 'noindex, nofollow';
         var ref = document.createElement('meta');

@@ -25,8 +25,8 @@ declare global {
 
 let loaded = false;
 
-/** Az /app/t/<kód> link titkos részét elrejtjük, hogy ne kerüljön a mérésbe. */
-const hideCode = (u: string) => String(u || '').replace(/(\/app\/t\/)[^/?#]+/, '$1[kod]');
+/** Az /app/t/<kód> és a /berlet/<kód> link titkos részét elrejtjük, hogy ne kerüljön a mérésbe. */
+const hideCode = (u: string) => String(u || '').replace(/(\/(?:app\/t|berlet)\/)[^/?#]+/, '$1[kod]');
 
 function loadAnalytics() {
   if (loaded) return;
