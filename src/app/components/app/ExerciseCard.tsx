@@ -321,10 +321,18 @@ function SetRow({
       label: cfg.exerciseName,
       phases: cfg.timed.phases,
       switchLabel: cfg.timed.sided ? 'Oldalváltás' : 'Átállás',
+      sided: cfg.timed.sided,
       href: cfg.href,
-      onDone: (sec) => {
+      onDone: (sec, parts) => {
         setReps(String(sec));
-        void save(w, sec, { startRest: true, hr: h === 'invalid' ? null : h });
+        // Ha a szakaszok (oldalak / körök) ideje eltér, a megjegyzésbe kerül, pl. „bal 30, jobb 22 mp”
+        let n = note.trim();
+        if (parts && parts.some((p) => p.seconds !== parts[0].seconds)) {
+          const auto = `${parts.map((p) => `${p.label.replace(/ oldal$/i, '').toLowerCase()} ${p.seconds}`).join(', ')} mp`;
+          n = (n ? `${n}; ${auto}` : auto).slice(0, 300);
+          setNote(n);
+        }
+        void save(w, sec, { startRest: true, hr: h === 'invalid' ? null : h, note: n });
       },
     });
   };

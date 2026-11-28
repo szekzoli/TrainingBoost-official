@@ -2,8 +2,10 @@
 //  * pihenő: egy sorozat kipipálása után, ha van megadott pihenő, visszaszámol. Az utolsó 5 másodpercben
 //    csippan, a végén hosszabb hang (és rezgés, ahol a telefon tudja), majd magától eltűnik;
 //  * munka: időre menő gyakorlat (pl. plank „30 mp”, oldalanként „30-30 mp”): 3 mp felkészülés, majd a
-//    szakaszok (oldalváltásnál 3 mp átállás), a végén a sorozat magától mentődik. Szüneteltethető, és a
-//    „Kész” gombbal előbb is lezárható: ilyenkor az addig kitartott idő mentődik;
+//    szakaszok (oldalváltásnál 3 mp átállás), a végén a sorozat magától mentődik. Szüneteltethető.
+//    Több szakasznál (két oldal, körök) az „Oldal kész” / „Kör kész” csak az aktuális szakaszt zárja le
+//    az addig kitartott idővel, és jön a következő; az utolsón a „Kész” a sorozatot. Mentett érték: a
+//    leggyengébb szakasz ideje, a szakaszok külön is visszajönnek (a megjegyzéshez);
 //  * stopper: „max” idős gyakorlat; szüneteltethető, a „Kész” gombbal áll meg, és az eltelt idő mentődik.
 // Amíg számláló fut, a képernyő nem alszik el (ahol a böngésző engedi). A sávra koppintva vissza lehet
 // jutni az edzéshez, ha közben máshová navigált.
@@ -15,6 +17,8 @@ import { beep, keepAwake, unlockAudio } from './sound';
 
 /** Egy munka-szakasz (pl. „Bal oldal”, 30 mp). */
 export type WorkPhase = { label: string; seconds: number };
+/** Egy szakasz eredménye: ennyi másodpercig bírta. */
+export type PhaseResult = { label: string; seconds: number };
 
 export type WorkOptions = {
   /** A gyakorlat neve (a sáv felirata). */
@@ -25,8 +29,13 @@ export type WorkOptions = {
   switchLabel?: string;
   /** Hová vigyen a sávra koppintás (az edzésnap, a sorral). */
   href?: string;
-  /** A végén hívódik: egy szakasz hossza (visszaszámlálásnál) vagy az eltelt idő (stopper), másodpercben. */
-  onDone: (seconds: number) => void;
+  /** Kétoldalas gyakorlat (a lépés gombja „Oldal kész”, különben „Kör kész”). */
+  sided?: boolean;
+  /**
+   * A végén hívódik: a leggyengébb szakasz ideje (visszaszámlálásnál) vagy az eltelt idő (stopper),
+   * másodpercben; több szakasznál a szakaszonkénti eredmény is.
+   */
+  onDone: (seconds: number, parts?: PhaseResult[]) => void;
 };
 
 type RestTimerApi = {
@@ -53,23 +62,54 @@ type Segment = { kind: 'prep' | 'work' | 'switch'; label: string; seconds: numbe
 
 type Run =
   | { kind: 'rest'; endAt: number; total: number; label: string; href?: string }
-  | { kind: 'work'; startAt: number; pausedAt?: number; segments: Segment[]; label: string; href?: string; phaseSeconds: number }
+  | {
+      kind: 'work';
+      startAt: number;
+      pausedAt?: number;
+      segments: Segment[];
+      label: string;
+      href?: string;
+      sided: boolean;
+      /** Előbb lezárt szakaszok: szegmens-index → kitartott másodperc. */
+      cuts: Record<number, number>;
+    }
   | { kind: 'stopwatch'; startAt: number; pausedAt?: number; label: string; href?: string };
 
 /** Szüneteltetésnél a számláló ideje a szünet pillanatában áll. */
 const clockOf = (run: Run, now: number) => (run.kind !== 'rest' && run.pausedAt !== undefined ? run.pausedAt : now);
 
-/**
- * Korai lezárásnál mentendő idő: a futó munkaszakaszban eddig kitartott másodpercek; oldalváltás közben
- * (az előző oldal már megvolt) a teljes szakasz; felkészülés közben 0 (nincs mit menteni).
- */
-function workDoneSeconds(run: Extract<Run, { kind: 'work' }>, clock: number): number {
+/** Hol tart a munka: az aktuális szegmens indexe és benne az eltelt idő (mp); null, ha minden lement. */
+function positionAt(run: Extract<Run, { kind: 'work' }>, clock: number): { i: number; elapsed: number } | null {
   let t = (clock - run.startAt) / 1000;
-  for (const seg of run.segments) {
-    if (t < seg.seconds) return seg.kind === 'work' ? Math.floor(t) : seg.kind === 'switch' ? run.phaseSeconds : 0;
-    t -= seg.seconds;
+  for (let i = 0; i < run.segments.length; i++) {
+    if (t < run.segments[i].seconds) return { i, elapsed: t };
+    t -= run.segments[i].seconds;
   }
-  return run.phaseSeconds;
+  return null;
+}
+
+/** Az i-edik szegmens vége a kezdéstől (ms). */
+const segmentEndMs = (run: Extract<Run, { kind: 'work' }>, i: number) =>
+  run.segments.slice(0, i + 1).reduce((sum, seg) => sum + seg.seconds * 1000, 0);
+
+/** Utolsó munka-szegmens-e az i-edik (utána már nincs munka). */
+const isLastWork = (run: Extract<Run, { kind: 'work' }>, i: number) =>
+  !run.segments.slice(i + 1).some((seg) => seg.kind === 'work');
+
+/**
+ * Szakaszonkénti eredmény a megadott pillanatig: a lement szakaszok teljes ideje (vagy amennyit az
+ * „Oldal kész”-nél kitartott), a futó szakasz eddigi ideje; a még el nem kezdett szakasz kimarad.
+ */
+function phaseResults(run: Extract<Run, { kind: 'work' }>, clock: number): PhaseResult[] {
+  const pos = positionAt(run, clock);
+  const out: PhaseResult[] = [];
+  run.segments.forEach((seg, i) => {
+    if (seg.kind !== 'work') return;
+    if (run.cuts[i] !== undefined) out.push({ label: seg.label, seconds: run.cuts[i] });
+    else if (!pos || i < pos.i) out.push({ label: seg.label, seconds: seg.seconds });
+    else if (i === pos.i) out.push({ label: seg.label, seconds: Math.floor(pos.elapsed) });
+  });
+  return out;
 }
 
 function buildSegments(phases: WorkPhase[], switchLabel = 'Oldalváltás'): Segment[] {
@@ -116,7 +156,7 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
   const [now, setNow] = useState(() => Date.now());
   const [finished, setFinished] = useState(false);
   const hideTimer = useRef<number | null>(null);
-  const onDoneRef = useRef<((s: number) => void) | null>(null);
+  const onDoneRef = useRef<WorkOptions['onDone'] | null>(null);
   // Melyik másodpercnél csippantunk már (hogy egy másodpercben csak egyszer szóljon)
   const lastBeep = useRef<string>('');
 
@@ -164,21 +204,32 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
         segments: buildSegments(opts.phases, opts.switchLabel),
         label: opts.label,
         href: opts.href,
-        phaseSeconds: opts.phases[0].seconds,
+        sided: !!opts.sided,
+        cuts: {},
       });
     }
   }, []);
 
   /** Munka / stopper lezárása: mentés a megadott idővel, utána a sáv eltűnik (vagy pihenő indul). */
   const finishWork = useCallback(
-    (seconds: number) => {
+    (seconds: number, parts?: PhaseResult[]) => {
       const cb = onDoneRef.current;
       onDoneRef.current = null;
       setRun(null);
       setFinished(false);
-      if (cb && seconds > 0) cb(seconds);
+      if (cb && seconds > 0) cb(seconds, parts && parts.length > 1 ? parts : undefined);
     },
     [],
+  );
+
+  /** Munka lezárása a szakaszok eredményével: a mentett érték a leggyengébb szakasz. */
+  const finishPhases = useCallback(
+    (r: Extract<Run, { kind: 'work' }>, clock: number) => {
+      const parts = phaseResults(r, clock);
+      const value = parts.length ? Math.min(...parts.map((p) => p.seconds)) : 0;
+      finishWork(value, parts);
+    },
+    [finishWork],
   );
 
   // Ketyegés és hangjelzések
@@ -202,7 +253,7 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
         const at = segmentAt(run.segments, t - run.startAt);
         if (!at) {
           beep(true);
-          finishWork(run.phaseSeconds);
+          finishPhases(run, t);
           return;
         }
         const key = `${at.i}:${at.left}`;
@@ -219,7 +270,7 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
     tick();
     const id = window.setInterval(tick, 200);
     return () => window.clearInterval(id);
-  }, [run, finished, paused, finishWork]);
+  }, [run, finished, paused, finishPhases]);
 
   /** Szünet / folytatás (munka és stopper): folytatáskor a kezdés a szünet hosszával tolódik. */
   const togglePause = () => {
@@ -233,14 +284,34 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
     setNow(Date.now());
   };
 
-  /** „Kész”: a munka / stopper lezárása most, az addig kitartott idővel. */
+  /**
+   * „Kész”: stopper → az eltelt idő mentése. Munka → ha van még hátra munka-szakasz, csak az aktuálist
+   * zárja le („Oldal kész” / „Kör kész”), és jön az átállás; az utolsó szakaszon a sorozatot.
+   */
   const finishNow = () => {
     if (!run || run.kind === 'rest') return;
-    const clock = clockOf(run, Date.now());
-    const seconds = run.kind === 'work' ? workDoneSeconds(run, clock) : Math.floor((clock - run.startAt) / 1000);
+    const t = Date.now();
+    const clock = clockOf(run, t);
+    if (run.kind === 'stopwatch') {
+      beep(true);
+      const seconds = Math.floor((clock - run.startAt) / 1000);
+      if (seconds > 0) finishWork(seconds);
+      else stop();
+      return;
+    }
+    const pos = positionAt(run, clock);
+    if (!pos || run.segments[pos.i].kind !== 'work') return;
+    if (isLastWork(run, pos.i)) {
+      beep(true);
+      finishPhases(run, clock);
+      return;
+    }
+    // Ugrás a következő szegmens elejére (folytatva, ha szünetelt); a lezárt szakasz ideje megmarad
+    const cut = Math.floor(pos.elapsed);
     beep(true);
-    if (seconds > 0) finishWork(seconds);
-    else stop();
+    lastBeep.current = '';
+    setRun({ ...run, cuts: { ...run.cuts, [pos.i]: cut }, startAt: t - segmentEndMs(run, pos.i), pausedAt: undefined });
+    setNow(t);
   };
 
   // Pihenő mentése a fülhöz (újratöltés után is folytatódjon); munka-számlálót nem mentünk
@@ -294,6 +365,15 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
     big = fmt(el);
     progress = 1;
     accent = true;
+  }
+
+  // A „Kész” gomb: stopperen mindig; munkánál csak munka-szakasz közben (felkészülés / átállás alatt nem)
+  let doneLabel: string | null = null;
+  if (run?.kind === 'stopwatch') doneLabel = 'Kész';
+  else if (run?.kind === 'work') {
+    const pos = positionAt(run, clockOf(run, now));
+    if (pos && run.segments[pos.i].kind === 'work')
+      doneLabel = isLastWork(run, pos.i) ? 'Kész' : run.sided ? 'Oldal kész' : 'Kör kész';
   }
 
   const showBack = run && !samePath(run.href, pathname);
@@ -351,14 +431,16 @@ export function RestTimerProvider({ children }: { children: React.ReactNode }) {
                 >
                   {paused ? <Play className="size-5 fill-current" /> : <Pause className="size-5 fill-current" />}
                 </button>
-                <button
-                  type="button"
-                  onClick={finishNow}
-                  aria-label="Kész: az eddigi idő mentése"
-                  className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[10px] bg-app-teal px-3 text-sm font-semibold text-white"
-                >
-                  <Square className="size-4 fill-current" /> Kész
-                </button>
+                {doneLabel && (
+                  <button
+                    type="button"
+                    onClick={finishNow}
+                    aria-label={`${doneLabel}: az eddigi idő mentése`}
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-app-teal px-3 text-sm font-semibold text-white"
+                  >
+                    <Square className="size-4 fill-current" /> {doneLabel}
+                  </button>
+                )}
               </>
             )}
             <button
