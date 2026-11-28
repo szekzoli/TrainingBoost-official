@@ -164,6 +164,9 @@ function SetRow({
   const [reps, setReps] = useState(saved?.reps?.toString() ?? '');
   const [hr, setHr] = useState(saved?.heart_rate?.toString() ?? '');
   const [note, setNote] = useState(saved?.note ?? '');
+  // Az időmérés végén a friss megjegyzés kell (a számláló közben is írhatott bele)
+  const noteRef = useRef(note);
+  noteRef.current = note;
   const [noteOpen, setNoteOpen] = useState(false);
   const [missing, setMissing] = useState<{ w?: boolean; r?: boolean }>({});
   const [askNoWeight, setAskNoWeight] = useState(false);
@@ -326,7 +329,7 @@ function SetRow({
       onDone: (sec, parts) => {
         setReps(String(sec));
         // Ha a szakaszok (oldalak / körök) ideje eltér, a megjegyzésbe kerül, pl. „bal 30, jobb 22 mp”
-        let n = note.trim();
+        let n = noteRef.current.trim();
         if (parts && parts.some((p) => p.seconds !== parts[0].seconds)) {
           const auto = `${parts.map((p) => `${p.label.replace(/ oldal$/i, '').toLowerCase()} ${p.seconds}`).join(', ')} mp`;
           n = (n ? `${n}; ${auto}` : auto).slice(0, 300);
