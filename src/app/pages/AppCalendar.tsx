@@ -1,16 +1,54 @@
 // Naptár: mikor edzett az ügyfél. A napra koppintva látszanak az aznapi edzések, és megnyithatók.
+// Alatta a korábbi edzések listája (legújabb elöl): dátum, nap, kezdés–vége, időtartam, nehézség.
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import type { PlanDay, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { isDayDone, setProgress } from '../components/app/plan-utils';
-import { fmtDayLong, fromIso, isoDay, todayIso, workoutDate } from '../components/app/dates';
+import { fmtDayLong, fmtDayShort, fromIso, isoDay, todayIso, workoutDate } from '../components/app/dates';
 import { durationOf, fmtClock, fmtMinutes } from '../components/app/workout-time';
 
 type Entry = { day: PlanDay; log: WorkoutLog; done: boolean };
 
 const WEEKDAYS = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
+const RATINGS = ['', 'nagyon könnyű', 'könnyű', 'pont jó', 'nehéz', 'nagyon nehéz'];
+const HISTORY_STEP = 10;
+
+/** Egy edzés sora (a kiválasztott napnál és a korábbi edzések listájában is). */
+function EntryRow({ day, log, done, date }: Entry & { date?: string }) {
+  const p = setProgress(day.exercises, log);
+  const d = durationOf(log);
+  const parts = [
+    date ? fmtDayShort(date) : null,
+    `${day.week}. hét`,
+    `${p.done} / ${p.total} sorozat`,
+    d ? `${fmtClock(d.start)}–${fmtClock(d.end)} (${fmtMinutes(d.minutes)})` : log.completed_at && date ? 'utólag rögzítve' : null,
+    log.rating ? RATINGS[log.rating] : null,
+  ].filter(Boolean);
+  return (
+    <Link
+      to={`/app/d/${day.week}/${day.day}`}
+      className="flex min-h-14 items-center justify-between gap-3 rounded-[14px] border border-app-line px-4 py-3"
+    >
+      <span className="min-w-0">
+        <span className="block font-semibold">{day.title ?? `${day.day}. edzés`}</span>
+        <span className="block text-xs text-app-muted">
+          {parts.join(' · ')}
+          {!date && log.note ? ` · „${log.note.slice(0, 40)}${log.note.length > 40 ? '…' : ''}”` : ''}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-app-teal">
+        {done && (
+          <>
+            <Check className="size-4" /> kész
+          </>
+        )}
+        <ChevronRight className="size-4 text-app-navy/50" />
+      </span>
+    </Link>
+  );
+}
 
 /** Hétfő-alapú hét kezdőnapja. */
 function mondayOf(iso: string): string {
@@ -59,6 +97,7 @@ export default function AppCalendar() {
   const lastDate = allDates.at(-1) ?? null;
   const [month, setMonth] = useState(() => (lastDate ?? today).slice(0, 7));
   const [selected, setSelected] = useState<string | null>(() => (byDate.has(today) ? today : lastDate));
+  const [historyCount, setHistoryCount] = useState(HISTORY_STEP);
 
   if (!plan) return null;
 
@@ -82,6 +121,16 @@ export default function AppCalendar() {
   const streak = weekStreak(doneDates);
   const next = plan.days.find((d) => !isDayDone(logs, d.id));
   const selectedEntries = selected ? byDate.get(selected) ?? [] : [];
+  // Korábbi edzések: minden rögzített edzés, legújabb elöl (napon belül a későbbi kezdés elöl)
+  const history = allDates
+    .slice()
+    .reverse()
+    .flatMap((date) =>
+      (byDate.get(date) ?? [])
+        .slice()
+        .sort((a, b) => (b.log.started_at ?? b.log.created_at).localeCompare(a.log.started_at ?? a.log.created_at))
+        .map((e) => ({ ...e, date })),
+    );
 
   return (
     <div className="space-y-5">
@@ -178,37 +227,11 @@ export default function AppCalendar() {
             <p className="text-sm text-app-muted">Ezen a napon nincs rögzített edzés.</p>
           ) : (
             <ul className="space-y-2">
-              {selectedEntries.map(({ day, log, done }) => {
-                const p = setProgress(day.exercises, log);
-                return (
-                  <li key={day.id}>
-                    <Link
-                      to={`/app/d/${day.week}/${day.day}`}
-                      className="flex min-h-14 items-center justify-between gap-3 rounded-[14px] border border-app-line px-4 py-3"
-                    >
-                      <span className="min-w-0">
-                        <span className="block font-semibold">{day.title ?? `${day.day}. edzés`}</span>
-                        <span className="block text-xs text-app-muted">
-                          {day.week}. hét · {p.done} / {p.total} sorozat
-                          {(() => {
-                            const d = durationOf(log);
-                            return d ? ` · ${fmtClock(d.start)}–${fmtClock(d.end)} (${fmtMinutes(d.minutes)})` : '';
-                          })()}
-                          {log.note ? ` · „${log.note.slice(0, 40)}${log.note.length > 40 ? '…' : ''}”` : ''}
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-app-teal">
-                        {done && (
-                          <>
-                            <Check className="size-4" /> kész
-                          </>
-                        )}
-                        <ChevronRight className="size-4 text-app-navy/50" />
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              {selectedEntries.map((e) => (
+                <li key={e.day.id}>
+                  <EntryRow {...e} />
+                </li>
+              ))}
             </ul>
           )}
         </section>
@@ -221,6 +244,28 @@ export default function AppCalendar() {
         >
           Következő: {next.week}. hét · {next.title ?? `${next.day}. nap`}
         </Link>
+      )}
+
+      {history.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-app-teal">Korábbi edzések</h2>
+          <ul className="space-y-2">
+            {history.slice(0, historyCount).map((e) => (
+              <li key={`${e.date}-${e.day.id}`}>
+                <EntryRow {...e} />
+              </li>
+            ))}
+          </ul>
+          {history.length > historyCount && (
+            <button
+              type="button"
+              onClick={() => setHistoryCount((n) => n + HISTORY_STEP)}
+              className="h-11 w-full rounded-[10px] border border-app-line text-sm font-semibold"
+            >
+              Továbbiak ({history.length - historyCount})
+            </button>
+          )}
+        </section>
       )}
     </div>
   );
