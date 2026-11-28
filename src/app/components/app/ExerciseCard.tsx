@@ -11,6 +11,7 @@ import { useSession } from './session';
 import { todayIso } from './dates';
 import {
   bestWeight,
+  currentLog as currentLogOf,
   expectsWeight,
   formatSet,
   isBodyweight,
@@ -576,8 +577,9 @@ export default function ExerciseCard({
 }) {
   const { startWorkout } = useSession();
   const { hrMode } = usePrefs();
-  const currentLog = logs.find((l) => l.plan_day_id === planDayId);
-  const prev = previousSets(plan, logs, planDayId, item.exercise.id);
+  // A nap aktuális alkalma (ismétlésnél a legutóbbi); az „Előző” a korábbi alkalmakból jön
+  const currentLog = currentLogOf(logs, planDayId);
+  const prev = previousSets(plan, logs, currentLog, item.exercise.id);
   const hasVideo = getVideoEmbedUrl(item.exercise.video_url) !== null;
   const image = item.exercise.image_url?.trim() || null;
   const [imageOk, setImageOk] = useState(true);
@@ -702,7 +704,7 @@ export default function ExerciseCard({
                 saved={savedOf(n)}
                 prev={prev.get(n)}
                 prevToday={before}
-                bestBefore={bestWeight(plan, logs, item.exercise.id, { dayExerciseId: item.id, setNumber: n })}
+                bestBefore={bestWeight(plan, logs, item.exercise.id, { log: currentLog, dayExerciseId: item.id, setNumber: n })}
                 fillTick={fillTick}
                 prevDone={n === 1 || isSetDone(savedOf(n - 1))}
                 nextDone={n < item.sets && isSetDone(savedOf(n + 1))}

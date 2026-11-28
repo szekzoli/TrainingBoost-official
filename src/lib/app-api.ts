@@ -52,6 +52,8 @@ export type SetLog = {
 
 export type WorkoutLog = {
   plan_day_id: string;
+  /** Hányadik alkalom ezen a napon (012-es SQL; régi adatbázisnál hiányzik = 1). */
+  attempt?: number;
   /** Mikor kezdte az edzést (009-es SQL). */
   started_at?: string | null;
   completed_at: string | null;
@@ -176,7 +178,13 @@ export const appApi = {
       throw e;
     }
   },
-  /** Egy rögzített edzés (a nap naplója a sorozataival) törlése. A 010-es SQL kell hozzá. */
+  /** „Újra elvégzem”: új, üres alkalom a naphoz (012-es SQL). */
+  repeatDay: (code: string, planDayId: string) =>
+    rpc<{ plan_day_id: string; attempt: number; created_at: string }>('app_repeat_day', {
+      p_code: code,
+      p_plan_day_id: planDayId,
+    }),
+  /** A nap legutóbbi alkalmának törlése (a sorozataival). A 010-es SQL kell hozzá (a 012 óta: csak a legutóbbi). */
   deleteWorkout: (code: string, planDayId: string) =>
     rpc<{ plan_day_id: string; deleted: boolean }>('app_delete_workout', { p_code: code, p_plan_day_id: planDayId }),
   deleteMyData: (code: string) => rpc<void>('app_delete_my_data', { p_code: code }),

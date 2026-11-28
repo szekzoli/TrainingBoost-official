@@ -14,6 +14,7 @@ export type AttentionSet = {
 
 export type AttentionItem = {
   workout_log_id: string;
+  attempt?: number;
   client_id: string;
   client_label: string;
   plan_id: string;

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ChevronLeft, Download, Printer, Share2 } from 'lucide-react';
 import { useSession } from '../components/app/session';
-import { isDayDone } from '../components/app/plan-utils';
+import { isDayDone, shownLog } from '../components/app/plan-utils';
 import { buildPlanSummary, type SummarySet } from '../../lib/plan-summary';
 import { downloadBlob, fileSlug, shareOrDownload, summaryToXlsx } from '../../lib/summary-xlsx';
 import { todayIso } from '../components/app/dates';
@@ -22,7 +22,9 @@ export default function AppSummary() {
     const where = new Map<string, { week: number; day: number; position: number }>();
     for (const d of plan.days) for (const e of d.exercises) where.set(e.id, { week: d.week, day: d.day, position: e.position });
     const sets: SummarySet[] = [];
-    for (const log of logs) {
+    // Naponként egy alkalom (ismétlésnél a legutóbbi kitöltött), hogy a hét cellája ne duplázódjon
+    const perDay = plan.days.map((d) => shownLog(logs, d.id)).filter((l): l is NonNullable<typeof l> => !!l);
+    for (const log of perDay) {
       for (const s of log.sets) {
         const w = where.get(s.day_exercise_id);
         if (w) sets.push({ ...w, set_number: s.set_number, weight_kg: s.weight_kg, reps: s.reps });

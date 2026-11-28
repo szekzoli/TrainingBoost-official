@@ -98,6 +98,7 @@ function WorkoutCard({ w }: { w: ClientWorkout }) {
         <span className="font-bold">{fmtDay(dateOf(w))}</span>
         <span className="text-sm text-muted">
           {w.week}. hét · {w.day_title ?? `${w.day}. nap`}
+          {(w.attempt ?? 1) > 1 ? ` · ${w.attempt}. alkalom` : ''}
         </span>
         {w.completed_at ? (
           <span className="rounded-full border border-teal px-2 py-0.5 text-xs font-semibold text-teal">kész</span>
@@ -309,7 +310,7 @@ export default function ClientDetail() {
           ) : (
             <ul className="mt-4 space-y-3">
               {workouts.map((w) => (
-                <WorkoutCard key={w.plan_day_id} w={w} />
+                <WorkoutCard key={`${w.plan_day_id}-${w.attempt ?? 1}`} w={w} />
               ))}
             </ul>
           )

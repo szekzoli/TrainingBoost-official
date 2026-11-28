@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer, Trash2 } from 'lucide-react';
+import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer, RotateCcw, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,7 @@ import { useRestTimer } from '../components/app/RestTimer';
 import { ShareButton } from '../components/app/ShareButton';
 import { buildWeekCard, weekTitle } from '../components/app/share-data';
 import ExerciseCard from '../components/app/ExerciseCard';
-import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
+import { attemptOf, currentLog, groupExercises, isEmptyLog, isSuperset, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, isoDay, todayIso, workoutDate } from '../components/app/dates';
 import {
   ASK_AFTER_HOURS,
@@ -52,13 +52,22 @@ const RATINGS = [
 
 export default function AppDay() {
   const { week, day } = useParams();
-  const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout, deleteWorkout } = useSession();
+  const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout, deleteWorkout, repeatDay } = useSession();
+  const [repeating, setRepeating] = useState(false);
   const timer = useRestTimer();
   const [deleting, setDeleting] = useState(false);
   const [search] = useSearchParams();
   const jumpTo = search.get('sor');
   const planDay = plan?.days.find((d) => String(d.week) === week && String(d.day) === day);
-  const log = planDay ? logs.find((l) => l.plan_day_id === planDay.id) : undefined;
+  // A nap aktuális (legutóbbi) alkalma; ismétlésnél a korábbiak megmaradnak
+  const log = planDay ? currentLog(logs, planDay.id) : undefined;
+  const attempt = log ? attemptOf(log) : 1;
+  const earlier = planDay
+    ? logs
+        .filter((l) => l.plan_day_id === planDay.id && attemptOf(l) < attempt)
+        .sort((a, b) => attemptOf(b) - attemptOf(a))
+    : [];
+  const freshRepeat = attempt > 1 && isEmptyLog(log);
 
   const [note, setNote] = useState(log?.note ?? '');
   const [busy, setBusy] = useState(false);
@@ -164,16 +173,42 @@ export default function AppDay() {
     }
   };
 
-  /** Az edzés törlése (megerősítés után). Net kell hozzá, és nem lehet várakozó módosítás. */
+  /** „Újra elvégzem”: új, üres alkalom; a mostani eredmények az Előző oszlopba kerülnek. */
+  const repeat = async () => {
+    setRepeating(true);
+    try {
+      timer.stop();
+      const ok = await repeatDay(planDay.id);
+      if (ok) {
+        setNote('');
+        setDate(todayIso());
+        setAskEnd(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.success('Üres lappal kezdheted. A legutóbbi eredményeid az Előző oszlopban vannak.');
+      }
+    } catch (e) {
+      toast.error(
+        e instanceof AppApiError && e.kind === 'missing_function'
+          ? 'Az ismétlés a szerveren még nincs bekapcsolva (012-es SQL).'
+          : 'Nem sikerült. Próbáld újra.',
+      );
+    } finally {
+      setRepeating(false);
+    }
+  };
+
+  /** Az edzés (a nap legutóbbi alkalmának) törlése. Net kell hozzá, és nem lehet várakozó módosítás. */
   const removeWorkout = async () => {
     setDeleting(true);
     try {
       timer.stop(); // egy futó időmérés ne mentsen bele az éppen törölt edzésbe
+      const before = earlier[0];
       await deleteWorkout(planDay.id);
-      setNote('');
-      setDate(todayIso());
+      // Ha volt korábbi alkalom, az lesz újra az aktuális: annak a jegyzete és dátuma látszik
+      setNote(before?.note ?? '');
+      setDate(workoutDate(before) ?? todayIso());
       setAskEnd(false);
-      toast.success('Az edzés törölve.');
+      toast.success(freshRepeat ? 'Az ismétlés visszavonva.' : 'Az edzés törölve.');
     } catch (e) {
       const kind = e instanceof AppApiError ? e.kind : 'other';
       toast.error(
@@ -210,12 +245,32 @@ export default function AppDay() {
         </h1>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-app-muted">
           {planDay.week}. hét · {planDay.day}. nap
+          {attempt > 1 && <span>· {attempt}. alkalom</span>}
           {done && (
             <span className="inline-flex items-center gap-1 font-semibold text-app-teal">
               <Check className="size-4" /> Kész{savedDate ? ` · ${fmtDayLong(savedDate)}` : ''}
             </span>
           )}
         </p>
+        {freshRepeat && (
+          <div className="mt-3 flex items-center gap-3 rounded-[10px] border border-app-teal/40 bg-app-mint px-3 py-2 text-sm text-app-ink">
+            <RotateCcw className="size-4 shrink-0" />
+            <span className="flex-1">
+              Újra elvégzed ezt a napot.
+              {earlier[0] && workoutDate(earlier[0])
+                ? ` Az Előző oszlopban a legutóbbi eredményeid (${fmtDayLong(workoutDate(earlier[0])!)}).`
+                : ''}
+            </span>
+            <button
+              type="button"
+              onClick={() => void removeWorkout()}
+              disabled={deleting}
+              className="min-h-11 shrink-0 px-1 font-semibold underline disabled:opacity-50"
+            >
+              Mégse
+            </button>
+          </div>
+        )}
         {done && duration && (
           <p className="mt-1 flex items-center gap-1.5 text-sm text-app-muted">
             <Clock className="size-4" /> {fmtClock(duration.start)}–{fmtClock(duration.end)} · {fmtMinutes(duration.minutes)}
@@ -459,7 +514,17 @@ export default function AppDay() {
             />
           </div>
         )}
-        {log && (
+        {done && (
+          <button
+            type="button"
+            onClick={() => void repeat()}
+            disabled={repeating}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] border border-app-teal text-base font-semibold text-app-teal disabled:opacity-50"
+          >
+            <RotateCcw className="size-4" /> {repeating ? 'Készül…' : 'Újra elvégzem'}
+          </button>
+        )}
+        {log && !freshRepeat && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button
@@ -467,15 +532,16 @@ export default function AppDay() {
                 disabled={deleting}
                 className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-semibold text-red-700 disabled:opacity-50 dark:text-red-400"
               >
-                <Trash2 className="size-4" /> {deleting ? 'Törlés…' : 'Edzés törlése'}
+                <Trash2 className="size-4" /> {deleting ? 'Törlés…' : attempt > 1 ? 'Ez az alkalom törlése' : 'Edzés törlése'}
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Törlöd ezt az edzést?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  A nap összes rögzített sorozata, a kezdés és a lezárás ideje, a nehézség és a jegyzet is törlődik. Ez
-                  nem visszavonható. A terv nem változik, a napot újra elvégezheted.
+                  {attempt > 1
+                    ? `Ennek az alkalomnak (${attempt}.) minden sorozata, a kezdés és a lezárás ideje, a nehézség és a jegyzet is törlődik. A korábbi alkalmak megmaradnak. Ez nem visszavonható.`
+                    : 'A nap összes rögzített sorozata, a kezdés és a lezárás ideje, a nehézség és a jegyzet is törlődik. Ez nem visszavonható. A terv nem változik, a napot újra elvégezheted.'}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

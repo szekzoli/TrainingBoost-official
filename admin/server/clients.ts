@@ -146,6 +146,8 @@ async function getRow(db: SupabaseClient, id: string): Promise<ClientRow> {
 
 export type ClientWorkout = {
   plan_day_id: string;
+  /** Hányadik alkalom ezen a napon (012-es SQL). */
+  attempt?: number;
   plan_id: string;
   plan_title: string;
   week: number;

@@ -25,6 +25,7 @@ function EntryRow({ day, log, done, date }: Entry & { date?: string }) {
   const parts = [
     date ? fmtDayShort(date) : null,
     `${day.week}. hét`,
+    (log.attempt ?? 1) > 1 ? `${log.attempt}. alkalom` : null,
     `${p.done} / ${p.total} sorozat`,
     d ? `${fmtClock(d.start)}–${fmtClock(d.end)} (${fmtMinutes(d.minutes)})` : log.completed_at && date ? 'utólag rögzítve' : null,
     log.rating ? RATINGS[log.rating] : null,
@@ -64,7 +65,7 @@ export default function AppCalendar() {
       const day = plan.days.find((d) => d.id === log.plan_day_id);
       const date = workoutDate(log);
       if (!day || !date) continue;
-      const entry = { day, log, done: isDayDone(logs, day.id) };
+      const entry = { day, log, done: !!log.completed_at };
       map.set(date, [...(map.get(date) ?? []), entry]);
     }
     return map;
@@ -224,7 +225,7 @@ export default function AppCalendar() {
           ) : (
             <ul className="space-y-2">
               {selectedEntries.map((e) => (
-                <li key={e.day.id}>
+                <li key={`${e.day.id}-${e.log.attempt ?? 1}`}>
                   <EntryRow {...e} />
                 </li>
               ))}
@@ -242,7 +243,7 @@ export default function AppCalendar() {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-app-teal">Korábbi edzések</h2>
           <ul className="space-y-2">
             {history.slice(0, historyCount).map((e) => (
-              <li key={`${e.date}-${e.day.id}`}>
+              <li key={`${e.date}-${e.day.id}-${e.log.attempt ?? 1}`}>
                 <EntryRow {...e} />
               </li>
             ))}

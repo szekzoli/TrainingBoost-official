@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useSession } from '../components/app/session';
 import ExerciseMedia from '../components/app/ExerciseMedia';
 import PrescriptionBar from '../components/app/PrescriptionBar';
-import { formatSet, isBodyweight, previousSets, timedSpec } from '../components/app/plan-utils';
+import { currentLog, formatSet, isBodyweight, previousSets, timedSpec } from '../components/app/plan-utils';
 
 export default function AppExercise() {
   const { week, day, dayExerciseId } = useParams();
@@ -25,7 +25,7 @@ export default function AppExercise() {
     );
   }
 
-  const prev = [...previousSets(plan, logs, planDay.id, item.exercise.id).values()].sort(
+  const prev = [...previousSets(plan, logs, currentLog(logs, planDay.id), item.exercise.id).values()].sort(
     (a, b) => a.set_number - b.set_number,
   );
   const note = item.note?.trim();

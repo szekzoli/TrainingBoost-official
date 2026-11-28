@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import type { PlanDay, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
-import { groupExercises, isDayDone, isLoggable, isSuperset, setProgress, weeksOf } from '../components/app/plan-utils';
+import { groupExercises, isDayDone, isLoggable, isSuperset, setProgress, shownLog, weeksOf } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
 
 function DayCard({
@@ -173,7 +173,7 @@ export default function AppWeek() {
               <DayCard
                 day={d}
                 done={isDayDone(logs, d.id)}
-                log={logs.find((l) => l.plan_day_id === d.id)}
+                log={shownLog(logs, d.id)}
                 defaultOpen={d.id === nextOpenId}
               />
             </li>

@@ -33,8 +33,14 @@ export default function SummaryTable({
   const summary = useMemo(() => {
     if (!plan) return null;
     const sets: SummarySet[] = [];
+    // Naponként egy alkalom (ismétlésnél a legutóbbi, amiben van sorozat), hogy a hét cellája ne duplázódjon
+    const latest = new Map<string, ClientWorkout>();
     for (const w of workouts) {
-      if (w.plan_id !== planId) continue;
+      if (w.plan_id !== planId || w.sets.length === 0) continue;
+      const cur = latest.get(w.plan_day_id);
+      if (!cur || (w.attempt ?? 1) > (cur.attempt ?? 1)) latest.set(w.plan_day_id, w);
+    }
+    for (const w of latest.values()) {
       for (const s of w.sets) {
         sets.push({ week: w.week, day: w.day, position: s.position, set_number: s.set_number, weight_kg: s.weight_kg, reps: s.reps });
       }

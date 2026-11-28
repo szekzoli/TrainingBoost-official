@@ -188,8 +188,13 @@ export default function AppHelp() {
               Az edzésidő 10 perc és 5 óra között számít. Ha utólag rögzítesz (más napra állított dátummal), csak a dátum számít.
             </li>
             <li>
-              Rosszul rögzített edzés: a nap alján <b>Edzés törlése</b>. Minden sorozata és adata törlődik, a nap újra elvégezhető.
-              Internet kell hozzá.
+              <b>Újra elvégzem:</b> egy kész nap alján. A nap üres lappal indul, az eddigi edzés megmarad, és az{' '}
+              <b>Előző</b> oszlopban a legutóbbi eredményeid látszanak. Így bármelyik napot (vagy az egész programot) megismételheted.
+              Ha meggondoltad magad, a nap tetején a <b>Mégse</b> visszavonja.
+            </li>
+            <li>
+              Rosszul rögzített edzés: a nap alján <b>Edzés törlése</b> (ismétlésnél csak az aktuális alkalom törlődik). Internet kell
+              hozzá.
             </li>
           </Ul>
         </Topic>

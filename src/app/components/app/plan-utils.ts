@@ -1,7 +1,36 @@
 import type { PlanDay, PlanExercise, PlanData, SetLog, WorkoutLog } from '../../../lib/app-api';
 
+/** Kész-e a nap: bármelyik alkalma le van zárva. */
 export const isDayDone = (logs: WorkoutLog[], dayId: string) =>
   logs.some((l) => l.plan_day_id === dayId && l.completed_at);
+
+/** Hányadik alkalom (régi adatnál 1). */
+export const attemptOf = (l: WorkoutLog) => l.attempt ?? 1;
+
+/** A nap aktuális (legutóbbi) alkalma: ebbe megy minden rögzítés. */
+export function currentLog(logs: WorkoutLog[], dayId: string): WorkoutLog | undefined {
+  let cur: WorkoutLog | undefined;
+  for (const l of logs) if (l.plan_day_id === dayId && (!cur || attemptOf(l) > attemptOf(cur))) cur = l;
+  return cur;
+}
+
+/** Üres-e az alkalom (nincs benne sorozat, kezdés, lezárás, értékelés, jegyzet), pl. a frissen ismételt nap. */
+export function isEmptyLog(l: WorkoutLog | undefined): boolean {
+  if (!l) return true;
+  return (
+    !l.started_at &&
+    !l.completed_at &&
+    !l.rating &&
+    !l.note?.trim() &&
+    !l.sets.some((s) => s.weight_kg !== null || s.reps !== null)
+  );
+}
+
+/** A nap megjelenítendő alkalma (hét-nézet): az aktuális, de egy frissen ismételt, üres alkalom helyett az előző. */
+export function shownLog(logs: WorkoutLog[], dayId: string): WorkoutLog | undefined {
+  const all = logs.filter((l) => l.plan_day_id === dayId).sort((a, b) => attemptOf(b) - attemptOf(a));
+  return all.find((l) => !isEmptyLog(l)) ?? all[0];
+}
 
 export function weeksOf(plan: PlanData): { week: number; days: PlanDay[] }[] {
   const map = new Map<number, PlanDay[]>();
@@ -169,11 +198,14 @@ export function formatSet(s: SetLog, opts: { timed?: boolean; bodyweight?: boole
   return out;
 }
 
-/** Az adott gyakorlat legutóbbi, MÁS napon rögzített szetjei (szetszám szerint). */
+/**
+ * Az adott gyakorlat legutóbbi, MÁS alkalommal rögzített szetjei (szetszám szerint): más napról, vagy
+ * ugyanennek a napnak egy korábbi alkalmáról. Az aktuális alkalom (skip) kimarad.
+ */
 export function previousSets(
   plan: PlanData,
   logs: WorkoutLog[],
-  currentDayId: string,
+  skip: WorkoutLog | undefined,
   exerciseId: string,
 ): Map<number, SetLog> {
   const exerciseOf = new Map<string, string>();
@@ -181,7 +213,7 @@ export function previousSets(
 
   const result = new Map<number, SetLog>();
   for (const log of logs) {
-    if (log.plan_day_id === currentDayId) continue;
+    if (log === skip) continue;
     for (const s of log.sets) {
       if (exerciseOf.get(s.day_exercise_id) !== exerciseId) continue;
       if (s.weight_kg === null && s.reps === null) continue;
@@ -207,7 +239,7 @@ export function bestWeight(
   plan: PlanData,
   logs: WorkoutLog[],
   exerciseId: string,
-  except?: { dayExerciseId: string; setNumber: number },
+  except?: { log: WorkoutLog | undefined; dayExerciseId: string; setNumber: number },
 ): number | null {
   const exerciseOf = new Map<string, string>();
   for (const d of plan.days) for (const e of d.exercises) exerciseOf.set(e.id, e.exercise.id);
@@ -216,7 +248,7 @@ export function bestWeight(
     for (const s of log.sets) {
       if (s.weight_kg === null || exerciseOf.get(s.day_exercise_id) !== exerciseId) continue;
       if (isFlagged(s)) continue; // a „nem szabályos” sorozat nem rekord
-      if (except && s.day_exercise_id === except.dayExerciseId && s.set_number === except.setNumber) continue;
+      if (except && log === except.log && s.day_exercise_id === except.dayExerciseId && s.set_number === except.setNumber) continue;
       if (best === null || s.weight_kg > best) best = s.weight_kg;
     }
   }

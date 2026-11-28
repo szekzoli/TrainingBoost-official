@@ -127,6 +127,8 @@ export type BodyWeight = { measured_on: string; weight_kg: number };
 
 export type ClientWorkout = {
   plan_day_id: string;
+  /** Hányadik alkalom ezen a napon (012-es SQL; hiányzik = 1). */
+  attempt?: number;
   plan_id: string;
   plan_title: string;
   week: number;
@@ -174,6 +176,8 @@ export type ClientPatch = {
 
 export type AttentionItem = {
   workout_log_id: string;
+  /** Hányadik alkalom ezen a napon (012-es SQL). */
+  attempt?: number;
   client_id: string;
   client_label: string;
   plan_id: string;

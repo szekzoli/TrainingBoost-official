@@ -159,6 +159,7 @@ function AttentionCard() {
                     </Link>
                     <span className="text-xs text-muted">
                       {fmtDay(date)} · {it.week}. hét · {it.day_title || `${it.day}. nap`}
+                      {(it.attempt ?? 1) > 1 ? ` · ${it.attempt}. alkalom` : ''}
                     </span>
                     {pain && <Flag text="fájdalom" strong />}
                     {it.rating && RATING_TEXT[it.rating] && <Flag text={RATING_TEXT[it.rating]} />}

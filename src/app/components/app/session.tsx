@@ -20,6 +20,7 @@ import {
   type Op,
 } from './offline';
 import { isoDay } from './dates';
+import { attemptOf, currentLog, isEmptyLog } from './plan-utils';
 import { inAppBrowser } from './install-prompt';
 
 const CODE_KEY = 'tb_app_code';
@@ -75,9 +76,11 @@ type Session = {
   setWorkoutDate: (planDayId: string, date: string | null) => Promise<boolean>;
   /** Milyen nehéz volt az edzés (1–5) vagy null. */
   rateWorkout: (planDayId: string, rating: number | null) => Promise<boolean>;
+  /** „Újra elvégzem”: új, üres alkalom a naphoz (az eddigiek megmaradnak). */
+  repeatDay: (planDayId: string) => Promise<boolean>;
   /**
-   * A nap rögzített edzésének törlése (sorozatok, kezdés, lezárás, jegyzet). Csak nettel, és ha nincs
-   * várakozó módosítás (különben a várólista újra létrehozná). Hibánál AppApiError-t dob.
+   * A nap legutóbbi alkalmának törlése (sorozatok, kezdés, lezárás, jegyzet); a korábbi alkalmak
+   * megmaradnak. Csak nettel, és ha nincs várakozó módosítás. Hibánál AppApiError-t dob.
    */
   deleteWorkout: (planDayId: string) => Promise<void>;
   /** A személyes hozzáférési kód (a Beállításokban a saját link megjelenítéséhez). */
@@ -243,11 +246,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [code, ensureConsent],
   );
 
+  // A napló legfrissebb állapota (a műveletek alkalom-sorszámához)
+  const logsRef = useRef(logs);
+  logsRef.current = logs;
+
+  /** A nap aktuális (legutóbbi) alkalmának módosítása; ha még nincs, az 1. jön létre. */
   const upsertLog = (planDayId: string, fn: (l: WorkoutLog) => WorkoutLog) =>
     setLogs((prev) => {
-      const existing = prev.find((l) => l.plan_day_id === planDayId);
+      const existing = currentLog(prev, planDayId);
       const base: WorkoutLog = existing ?? {
         plan_day_id: planDayId,
+        attempt: 1,
         completed_at: null,
         note: null,
         created_at: new Date().toISOString(),
@@ -256,6 +265,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       const next = fn(base);
       return existing ? prev.map((l) => (l === existing ? next : l)) : [...prev, next];
     });
+
+  /** Új alkalom a naphoz (ha ezzel a sorszámmal még nincs). */
+  const addAttempt = (planDayId: string, attempt: number, createdAt: string) =>
+    setLogs((prev) =>
+      prev.some((l) => l.plan_day_id === planDayId && attemptOf(l) === attempt)
+        ? prev
+        : [...prev, { plan_day_id: planDayId, attempt, completed_at: null, note: null, created_at: createdAt, sets: [] }],
+    );
+
+  /** A nap aktuális alkalmának sorszáma (a műveletekhez). */
+  const attemptNow = (planDayId: string) => {
+    const cur = currentLog(logsRef.current, planDayId);
+    return cur ? attemptOf(cur) : 1;
+  };
 
   // A sorozat melyik naphoz tartozik (helyi frissítéshez net nélkül)
   const dayOfRow = useMemo(() => {
@@ -296,6 +319,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         }));
       } else if (op.t === 'date') {
         upsertLog(op.planDayId, (l) => ({ ...l, performed_on: op.date }));
+      } else if (op.t === 'repeat') {
+        addAttempt(op.planDayId, op.attempt, op.at);
       } else {
         upsertLog(op.planDayId, (l) => ({ ...l, rating: op.rating }));
       }
@@ -315,6 +340,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         return appApi.setWorkoutDate(c, op.planDayId, op.date);
       case 'rate':
         return appApi.rateWorkout(c, op.planDayId, op.rating);
+      case 'repeat':
+        return appApi.repeatDay(c, op.planDayId);
     }
   };
 
@@ -423,6 +450,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           note: extra?.note ?? null,
           hr: extra?.hr ?? null,
           at: new Date().toISOString(),
+          attempt: attemptNow(dayOfRow.get(dayExerciseId) ?? ''),
         },
         (r) =>
           upsertLog(r.plan_day_id, (l) => ({
@@ -442,12 +470,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             ],
           })),
       ),
-    [write],
+    [write, dayOfRow],
   );
 
   const startWorkout: Session['startWorkout'] = useCallback(
     (planDayId, at) =>
-      write<{ started_at: string | null }>({ t: 'start', planDayId, at }, (r) =>
+      write<{ started_at: string | null }>({ t: 'start', planDayId, at, attempt: attemptNow(planDayId) }, (r) =>
         upsertLog(planDayId, (l) => ({ ...l, started_at: r.started_at })),
       ),
     [write],
@@ -456,7 +484,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const completeDay: Session['completeDay'] = useCallback(
     (planDayId, note, at) =>
       write<{ started_at?: string | null; completed_at: string; performed_on?: string | null; note: string | null }>(
-        { t: 'complete', planDayId, note, at: at ?? new Date().toISOString() },
+        { t: 'complete', planDayId, note, at: at ?? new Date().toISOString(), attempt: attemptNow(planDayId) },
         (r) =>
           upsertLog(planDayId, (l) => ({
             ...l,
@@ -471,7 +499,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const setWorkoutDate: Session['setWorkoutDate'] = useCallback(
     (planDayId, date) =>
-      write<{ performed_on: string | null }>({ t: 'date', planDayId, date }, (r) =>
+      write<{ performed_on: string | null }>({ t: 'date', planDayId, date, attempt: attemptNow(planDayId) }, (r) =>
         upsertLog(planDayId, (l) => ({ ...l, performed_on: r.performed_on })),
       ),
     [write],
@@ -479,9 +507,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const rateWorkout: Session['rateWorkout'] = useCallback(
     (planDayId, rating) =>
-      write<{ rating: number | null }>({ t: 'rate', planDayId, rating }, (r) =>
+      write<{ rating: number | null }>({ t: 'rate', planDayId, rating, attempt: attemptNow(planDayId) }, (r) =>
         upsertLog(planDayId, (l) => ({ ...l, rating: r.rating })),
       ),
+    [write],
+  );
+
+  const repeatDay: Session['repeatDay'] = useCallback(
+    (planDayId) => {
+      // Ha az aktuális alkalom még üres, nem kell új (a szerver is így dönt)
+      const cur = currentLog(logsRef.current, planDayId);
+      const attempt = !cur ? 1 : isEmptyLog(cur) ? attemptOf(cur) : attemptOf(cur) + 1;
+      return write<{ attempt: number; created_at: string }>(
+        { t: 'repeat', planDayId, attempt, at: new Date().toISOString() },
+        (r) => addAttempt(planDayId, r.attempt, r.created_at),
+      );
+    },
     [write],
   );
 
@@ -491,7 +532,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (outboxRef.current.length > 0) throw new AppApiError('network');
       await appApi.deleteWorkout(code, planDayId);
       setOffline(false);
-      setLogs((prev) => prev.filter((l) => l.plan_day_id !== planDayId));
+      // Csak a nap legutóbbi alkalma törlődik (a szerveren is)
+      setLogs((prev) => {
+        const cur = currentLog(prev, planDayId);
+        return prev.filter((l) => l !== cur);
+      });
     },
     [code],
   );
@@ -566,6 +611,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       completeDay,
       setWorkoutDate,
       rateWorkout,
+      repeatDay,
       deleteWorkout,
       code: status === 'ready' ? code : null,
       offline,
@@ -589,6 +635,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       completeDay,
       setWorkoutDate,
       rateWorkout,
+      repeatDay,
       deleteWorkout,
       code,
       offline,

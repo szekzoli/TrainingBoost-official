@@ -6,6 +6,9 @@ const CACHE_KEY = 'tb_app_cache_v1';
 const OUTBOX_KEY = 'tb_app_outbox_v1';
 const WEIGHTS_KEY = 'tb_app_weights_v1';
 
+// attempt: a nap hányadik alkalmára vonatkozik (a művelet létrehozásakor). A szerver mindig a nap
+// legutóbbi alkalmát írja, és a várólista sorrendben megy fel, így ez csak a kulcsokhoz kell: két
+// különböző alkalom azonos művelete ne írja felül egymást a várólistán. (Régi várólistában hiányozhat = 1.)
 export type Op =
   | {
       t: 'set';
@@ -16,15 +19,19 @@ export type Op =
       note?: string | null;
       hr?: number | null;
       at: string;
+      attempt?: number;
     }
-  | { t: 'start'; planDayId: string; at: string | null }
-  | { t: 'complete'; planDayId: string; note: string | null; at: string }
-  | { t: 'date'; planDayId: string; date: string | null }
-  | { t: 'rate'; planDayId: string; rating: number | null };
+  | { t: 'start'; planDayId: string; at: string | null; attempt?: number }
+  | { t: 'complete'; planDayId: string; note: string | null; at: string; attempt?: number }
+  | { t: 'date'; planDayId: string; date: string | null; attempt?: number }
+  | { t: 'rate'; planDayId: string; rating: number | null; attempt?: number }
+  /** „Újra elvégzem”: új alkalom (attempt = az új alkalom sorszáma). */
+  | { t: 'repeat'; planDayId: string; attempt: number; at: string };
 
 /** Ugyanarra a dologra vonatkozó újabb művelet felülírja a régit (pl. egy sorozat kétszer átírva). */
 export function opKey(op: Op): string {
-  return op.t === 'set' ? `set|${op.dayExerciseId}|${op.setNumber}` : `${op.t}|${op.planDayId}`;
+  const a = op.attempt ?? 1;
+  return op.t === 'set' ? `set|${op.dayExerciseId}|${op.setNumber}|${a}` : `${op.t}|${op.planDayId}|${a}`;
 }
 
 function read<T>(key: string): T | null {
