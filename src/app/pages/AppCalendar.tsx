@@ -95,7 +95,10 @@ export default function AppCalendar() {
   };
   const monthTitle = first.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' });
   const doneDates = allDates.filter((d) => byDate.get(d)!.some((e) => e.done));
-  const monthCount = doneDates.filter((d) => d.startsWith(month)).length;
+  // Lezárt edzések a hónapban (egy napon több is lehet, pl. ismétlés)
+  const monthCount = doneDates
+    .filter((d) => d.startsWith(month))
+    .reduce((n, d) => n + byDate.get(d)!.filter((e) => e.done).length, 0);
   const streak = weekStreak(doneDates);
   const next = plan.days.find((d) => !isDayDone(logs, d.id));
   const selectedEntries = selected ? byDate.get(selected) ?? [] : [];

@@ -50,7 +50,13 @@ const RATINGS = [
   { value: 5, label: 'nagyon nehéz' },
 ];
 
+/** Napváltáskor tiszta lap: a jegyzet, a dátum és a többi helyi állapot ne vigyen át másik napra. */
 export default function AppDay() {
+  const { week, day } = useParams();
+  return <DayPage key={`${week}/${day}`} />;
+}
+
+function DayPage() {
   const { week, day } = useParams();
   const { plan, logs, completeDay, setWorkoutDate, rateWorkout, startWorkout, deleteWorkout, repeatDay } = useSession();
   const [repeating, setRepeating] = useState(false);
@@ -77,6 +83,8 @@ export default function AppDay() {
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
   // Lezáráskor, ha rég kezdte: rákérdezünk, mikor fejezte be
   const [askEnd, setAskEnd] = useState(false);
+  // Lezáráskor, ha még sok sorozat nincs kipipálva: rákérdezünk
+  const [askIncomplete, setAskIncomplete] = useState(false);
 
   // A számláló-sávról vagy az „Edzés folyamatban” sávról érkezve: a megadott gyakorlat első nem kész sorához görgetünk
   useEffect(() => {
@@ -146,8 +154,18 @@ export default function AppDay() {
     }
   };
 
-  /** Lezárás. Ha a kezdés óta több mint 3 óra telt el, előbb rákérdezünk a befejezés idejére. */
-  const finish = async (endAt?: Date) => {
+  const missingSets = progress.total - progress.done;
+
+  /**
+   * Lezárás. Ha még van kipipálatlan sorozat, előbb rákérdezünk (confirmed: már megerősítette); ha a
+   * kezdés óta több mint 3 óra telt el, a befejezés idejére is.
+   */
+  const finish = async (endAt?: Date, confirmed = false) => {
+    if (!done && !confirmed && missingSets > 0) {
+      setAskIncomplete(true);
+      return;
+    }
+    setAskIncomplete(false);
     if (
       !done &&
       !endAt &&
@@ -472,6 +490,29 @@ export default function AppDay() {
           placeholder="Hogy ment? Fájdalom, nehézség, megjegyzés…"
           className="w-full rounded-[10px] border border-app-line bg-white p-3 text-base text-app-navy placeholder:text-app-navy/30 focus:border-app-teal focus:outline-none focus:ring-1 focus:ring-app-teal"
         />
+        {askIncomplete && (
+          <div role="alert" className="space-y-2 rounded-[12px] border border-app-teal/40 bg-app-mint p-3 text-sm text-app-ink">
+            <p className="font-semibold">
+              Még {missingSets} sorozat nincs kipipálva. Lezárod így az edzést?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAskIncomplete(false)}
+                className="h-11 rounded-[10px] border border-app-line bg-white px-3 font-semibold"
+              >
+                Folytatom
+              </button>
+              <button
+                type="button"
+                onClick={() => void finish(undefined, true)}
+                className="h-11 rounded-[10px] bg-app-teal px-3 font-semibold text-white"
+              >
+                Lezárom
+              </button>
+            </div>
+          </div>
+        )}
         {askEnd && startedAt && (
           <div role="alert" className="space-y-2 rounded-[12px] border border-app-teal/40 bg-app-mint p-3 text-sm text-app-ink">
             <p className="font-semibold">
@@ -481,7 +522,7 @@ export default function AppDay() {
               {lastSet && lastSet.getTime() > new Date(startedAt).getTime() && (
                 <button
                   type="button"
-                  onClick={() => void finish(lastSet)}
+                  onClick={() => void finish(lastSet, true)}
                   className="h-11 rounded-[10px] bg-app-teal px-3 font-semibold text-white"
                 >
                   Az utolsó sorozatnál ({fmtClock(lastSet)})
@@ -489,7 +530,7 @@ export default function AppDay() {
               )}
               <button
                 type="button"
-                onClick={() => void finish(new Date())}
+                onClick={() => void finish(new Date(), true)}
                 className="h-11 rounded-[10px] border border-app-line bg-white px-3 font-semibold"
               >
                 Most ({fmtClock(new Date())})

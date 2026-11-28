@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import type { PlanDay, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
-import { groupExercises, isDayDone, isLoggable, isSuperset, setProgress, shownLog, weeksOf } from '../components/app/plan-utils';
+import { attemptOf, groupExercises, isDayDone, isLoggable, isSuperset, setProgress, shownLog, weeksOf } from '../components/app/plan-utils';
 import { fmtDayShort, workoutDate } from '../components/app/dates';
 
 function DayCard({
@@ -21,6 +21,8 @@ function DayCard({
   const sections = groupExercises(day.exercises);
   const progress = setProgress(day.exercises, log);
   const done = dayDone || (progress.total > 0 && progress.done === progress.total);
+  // A nap már kész, de épp újra csinálja (az aktuális, még le nem zárt alkalomban már van sorozat)
+  const repeatRunning = dayDone && !!log && !log.completed_at && attemptOf(log) > 1;
   const [open, setOpen] = useState(defaultOpen);
   const listId = useId();
 
@@ -31,9 +33,14 @@ function DayCard({
           <div className="min-w-0">
             <p className="text-xs text-app-muted">
               {day.day}. nap
-              {workoutDate(log) && done ? ` · ${fmtDayShort(workoutDate(log)!)}` : ''}
+              {workoutDate(log) && done && !repeatRunning ? ` · ${fmtDayShort(workoutDate(log)!)}` : ''}
             </p>
             <h2 className="text-lg font-bold leading-tight">{day.title ?? `${day.day}. edzés`}</h2>
+            {repeatRunning && log && (
+              <p className="mt-0.5 text-xs font-semibold text-app-ink">
+                {attemptOf(log)}. alkalom folyamatban · {progress.done} / {progress.total} sorozat
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             {done ? (
