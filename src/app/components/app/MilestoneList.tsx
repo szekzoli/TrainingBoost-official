@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { Award, Lock } from 'lucide-react';
 import { useSession } from './session';
 import { computeMilestones, loadSeen, saveSeen } from './milestones';
+import { ShareButton } from './ShareButton';
+import { buildMilestoneCard, buildProgramCard } from './share-data';
 import { usePrefs } from './prefs';
 
 /**
@@ -50,7 +52,15 @@ export function MilestoneList() {
       {shownDone.length > 0 && (
         <ul className="grid grid-cols-2 gap-2">
           {shownDone.map((m) => (
-            <li key={m.id} className="rounded-[14px] border border-app-teal/40 bg-app-mint p-3">
+            <li key={m.id} className="relative rounded-[14px] border border-app-teal/40 bg-app-mint p-3">
+              <span className="absolute right-1 top-1">
+                <ShareButton
+                  compact
+                  label={`${m.title}: megosztás`}
+                  filename={`trainingboost-${m.id}.png`}
+                  makeCard={() => (m.id.startsWith('program-') && plan ? buildProgramCard(plan, logs) : buildMilestoneCard(m))}
+                />
+              </span>
               <Award className="size-5 text-app-ink" aria-hidden />
               <p className="mt-1 text-sm font-semibold leading-snug">{m.title}</p>
               <p className="text-xs leading-snug text-app-muted">{m.detail}</p>

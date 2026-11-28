@@ -6,8 +6,10 @@ import { Check, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import type { PlanDay, WorkoutLog } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { isDayDone, setProgress } from '../components/app/plan-utils';
-import { fmtDayLong, fmtDayShort, fromIso, isoDay, todayIso, workoutDate } from '../components/app/dates';
+import { fmtDayLong, fmtDayShort, isoDay, todayIso, weekStreak, workoutDate } from '../components/app/dates';
 import { durationOf, fmtClock, fmtMinutes } from '../components/app/workout-time';
+import { ShareButton } from '../components/app/ShareButton';
+import { buildMonthCard, buildWeekCard, weekHasWorkouts } from '../components/app/share-data';
 
 type Entry = { day: PlanDay; log: WorkoutLog; done: boolean };
 
@@ -48,32 +50,6 @@ function EntryRow({ day, log, done, date }: Entry & { date?: string }) {
       </span>
     </Link>
   );
-}
-
-/** Hétfő-alapú hét kezdőnapja. */
-function mondayOf(iso: string): string {
-  const d = fromIso(iso);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return isoDay(d);
-}
-
-/** Hány egymást követő héten volt legalább egy kész edzés (a mostani vagy az előző héttől visszafelé). */
-function weekStreak(doneDates: string[]): number {
-  const weeks = new Set(doneDates.map(mondayOf));
-  let cur = mondayOf(todayIso());
-  if (!weeks.has(cur)) {
-    const d = fromIso(cur);
-    d.setDate(d.getDate() - 7);
-    cur = isoDay(d);
-  }
-  let n = 0;
-  while (weeks.has(cur)) {
-    n++;
-    const d = fromIso(cur);
-    d.setDate(d.getDate() - 7);
-    cur = isoDay(d);
-  }
-  return n;
 }
 
 export default function AppCalendar() {
@@ -153,6 +129,23 @@ export default function AppCalendar() {
           <div className="text-xs text-app-muted">hét egymás után</div>
         </div>
       </div>
+
+      {lastDate && (
+        <div className="flex flex-wrap gap-2">
+          <ShareButton
+            label="Ez a hetem"
+            filename="trainingboost-hetem.png"
+            makeCard={() => buildWeekCard(plan, logs, weekHasWorkouts(plan, logs, today) ? today : lastDate)}
+          />
+          {monthCount > 0 && (
+            <ShareButton
+              label={`${monthTitle.replace(/^\d+\.\s*/, '').replace(/^./, (c) => c.toUpperCase())} naptára`}
+              filename={`trainingboost-${month}.png`}
+              makeCard={() => buildMonthCard(plan, logs, month)}
+            />
+          )}
+        </div>
+      )}
 
       <section className="rounded-[14px] border border-app-line p-3">
         <div className="mb-2 flex items-center justify-between">

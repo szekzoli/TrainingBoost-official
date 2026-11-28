@@ -16,6 +16,8 @@ import {
 import { AppApiError } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { useRestTimer } from '../components/app/RestTimer';
+import { ShareButton } from '../components/app/ShareButton';
+import { buildWeekCard } from '../components/app/share-data';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, isoDay, todayIso, workoutDate } from '../components/app/dates';
@@ -447,6 +449,15 @@ export default function AppDay() {
         >
           {busy ? 'Mentés…' : done ? 'Jegyzet mentése' : 'Edzés kész'}
         </button>
+        {done && log && (
+          <div className="flex justify-center">
+            <ShareButton
+              label="Megosztom a hetem"
+              filename="trainingboost-hetem.png"
+              makeCard={() => buildWeekCard(plan, logs, workoutDate(log) ?? todayIso())}
+            />
+          </div>
+        )}
         {log && (
           <AlertDialog>
             <AlertDialogTrigger asChild>

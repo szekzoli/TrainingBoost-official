@@ -12,6 +12,32 @@ export const todayIso = () => isoDay(new Date());
 /** ÉÉÉÉ-HH-NN -> Date (helyi dél, hogy az időzóna ne csússzon át másik napra). */
 export const fromIso = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00`);
 
+/** Hétfő-alapú hét kezdőnapja (ÉÉÉÉ-HH-NN). */
+export function mondayOf(iso: string): string {
+  const d = fromIso(iso);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return isoDay(d);
+}
+
+/** Hány egymást követő héten volt legalább egy kész edzés (a mostani vagy az előző héttől visszafelé). */
+export function weekStreak(doneDates: string[]): number {
+  const weeks = new Set(doneDates.map(mondayOf));
+  let cur = mondayOf(todayIso());
+  if (!weeks.has(cur)) {
+    const d = fromIso(cur);
+    d.setDate(d.getDate() - 7);
+    cur = isoDay(d);
+  }
+  let n = 0;
+  while (weeks.has(cur)) {
+    n++;
+    const d = fromIso(cur);
+    d.setDate(d.getDate() - 7);
+    cur = isoDay(d);
+  }
+  return n;
+}
+
 /** "nov. 18., kedd" */
 export function fmtDayLong(iso: string): string {
   return fromIso(iso).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric', weekday: 'long' });
