@@ -165,6 +165,8 @@ export default function AppDay() {
       const at = done && log?.completed_at ? log.completed_at : (endAt ?? new Date()).toISOString();
       const ok = await completeDay(planDay.id, note.trim() === '' ? null : note.trim(), at);
       if (ok && date && date !== todayIso() && date !== log?.performed_on) await setWorkoutDate(planDay.id, date);
+      // Az edzés vége: a futó pihenő (vagy időmérés) is álljon le
+      if (ok && !done) timer.stop();
       if (ok) toast.success(done ? 'Jegyzet frissítve.' : 'Edzés kész, szép munka!');
     } catch {
       toast.error('Nem sikerült menteni. Próbáld újra.');
