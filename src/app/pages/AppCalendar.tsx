@@ -10,7 +10,7 @@ import { isDayDone, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, fmtDayShort, isoDay, todayIso, weekStreak, workoutDate } from '../components/app/dates';
 import { durationOf, fmtClock, fmtMinutes } from '../components/app/workout-time';
 import { ShareButton } from '../components/app/ShareButton';
-import { buildMonthCard, buildWeekCard, weekHasWorkouts } from '../components/app/share-data';
+import { buildMonthCard, buildWeekCard, weekHasWorkouts, weekTitle } from '../components/app/share-data';
 
 type Entry = { day: PlanDay; log: WorkoutLog; done: boolean };
 
@@ -98,6 +98,8 @@ export default function AppCalendar() {
   const streak = weekStreak(doneDates);
   const next = plan.days.find((d) => !isDayDone(logs, d.id));
   const selectedEntries = selected ? byDate.get(selected) ?? [] : [];
+  // Heti kép: az aktuális hét, ha volt benne edzés; különben az utolsó edzéses hét
+  const shareWeekDay = lastDate && !weekHasWorkouts(plan, logs, today) ? lastDate : today;
   // Korábbi edzések: minden rögzített edzés, legújabb elöl (napon belül a későbbi kezdés elöl)
   const history = allDates
     .slice()
@@ -134,9 +136,9 @@ export default function AppCalendar() {
       {lastDate && (
         <div className="flex flex-wrap gap-2">
           <ShareButton
-            label="Ez a hetem"
+            label={weekTitle(shareWeekDay)}
             filename="trainingboost-hetem.png"
-            makeCard={() => buildWeekCard(plan, logs, weekHasWorkouts(plan, logs, today) ? today : lastDate)}
+            makeCard={() => buildWeekCard(plan, logs, shareWeekDay)}
           />
           {monthCount > 0 && (
             <ShareButton

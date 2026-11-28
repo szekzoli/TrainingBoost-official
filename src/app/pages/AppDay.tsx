@@ -17,7 +17,7 @@ import { AppApiError } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { useRestTimer } from '../components/app/RestTimer';
 import { ShareButton } from '../components/app/ShareButton';
-import { buildWeekCard } from '../components/app/share-data';
+import { buildWeekCard, weekTitle } from '../components/app/share-data';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { groupExercises, isSuperset, setProgress } from '../components/app/plan-utils';
 import { fmtDayLong, isoDay, todayIso, workoutDate } from '../components/app/dates';
@@ -27,6 +27,7 @@ import {
   fmtClock,
   fmtElapsed,
   fmtMinutes,
+  isInProgress,
   isRetro,
   lastSetAt,
 } from '../components/app/workout-time';
@@ -221,7 +222,7 @@ export default function AppDay() {
           </p>
         )}
         {done && isRetro(log) && <p className="mt-1 text-xs text-app-muted">Utólag rögzítve (edzésidő nélkül)</p>}
-        {!done && startedAt && (
+        {!done && startedAt && log && isInProgress(log, todayIso()) && (
           <p className="mt-3 flex items-center gap-2 rounded-[10px] border border-app-teal/40 bg-app-mint px-3 py-2 text-sm text-app-ink">
             <Clock className="size-4 shrink-0" />
             <span className="flex-1">
@@ -452,7 +453,7 @@ export default function AppDay() {
         {done && log && (
           <div className="flex justify-center">
             <ShareButton
-              label="Megosztom a hetem"
+              label={`Megosztom: ${weekTitle(workoutDate(log) ?? todayIso()).toLowerCase()}`}
               filename="trainingboost-hetem.png"
               makeCard={() => buildWeekCard(plan, logs, workoutDate(log) ?? todayIso())}
             />

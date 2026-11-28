@@ -1,6 +1,6 @@
 // A megosztható képek adatai a tervből és a naplóból.
 import type { PlanData, WorkoutLog } from '../../../lib/app-api';
-import { fromIso, isoDay, mondayOf, weekStreak, workoutDate } from './dates';
+import { fromIso, isoDay, mondayOf, todayIso, weekStreak, workoutDate } from './dates';
 import { durationOf } from './workout-time';
 import type { MilestoneCard, MonthCard, ProgramCard, WeekCard } from './share-card';
 import type { Milestone } from './milestones';
@@ -27,7 +27,17 @@ export function weekHasWorkouts(plan: PlanData, logs: WorkoutLog[], anyDay: stri
   return completedEntries(plan, logs).some((e) => mondayOf(e.date) === mon);
 }
 
-/** „Ez a hetem”: a megadott napot tartalmazó hét (hétfő–vasárnap). */
+/** A hét címe a mai naphoz képest: „Ez a hetem”, „Múlt hetem”, régebbinél „Edzéshetem”. */
+export function weekTitle(anyDay: string): string {
+  const mon = mondayOf(anyDay);
+  const thisMon = mondayOf(todayIso());
+  if (mon === thisMon) return 'Ez a hetem';
+  const prev = fromIso(thisMon);
+  prev.setDate(prev.getDate() - 7);
+  return mon === isoDay(prev) ? 'Múlt hetem' : 'Edzéshetem';
+}
+
+/** Heti kép: a megadott napot tartalmazó hét (hétfő–vasárnap). */
 export function buildWeekCard(plan: PlanData, logs: WorkoutLog[], anyDay: string): WeekCard {
   const mon = fromIso(mondayOf(anyDay));
   const isoDays = Array.from({ length: 7 }, (_, i) => {
@@ -53,6 +63,7 @@ export function buildWeekCard(plan: PlanData, logs: WorkoutLog[], anyDay: string
   const programWeekNow = entries.length ? Math.max(...entries.map((e) => e.day.week)) : 0;
   return {
     kind: 'week',
+    title: weekTitle(anyDay),
     range,
     days,
     workouts: entries.length,

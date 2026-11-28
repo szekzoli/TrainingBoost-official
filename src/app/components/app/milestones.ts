@@ -1,7 +1,7 @@
 // Mérföldkövek: a naplóból számolva (nem kell hozzá külön adat a szerveren).
 // Az elért mérföldköveket a Haladás oldal mutatja; az újonnan elérteket egy rövid üzenet jelzi.
 import type { BodyWeight, PlanData, WorkoutLog } from '../../../lib/app-api';
-import { isBodyweight, isSetDone, timedSpec } from './plan-utils';
+import { isSetDone } from './plan-utils';
 
 export type Milestone = {
   id: string;
@@ -44,34 +44,8 @@ export function computeMilestones(plan: PlanData, logs: WorkoutLog[], weights: B
   const planDayIds = new Set(plan.days.map((d) => d.id));
   const doneInPlan = plan.days.filter((d) => completedIds.has(d.id)).length;
 
-  // Sorok típusa a tonnához: időre menő sorozatnál az „ismétlés” másodperc (nem számít bele),
-  // saját testsúlyosnál a súly = testsúly + plusz súly (ha van mérés; különben kimarad).
-  const rowKind = new Map<string, { timed: boolean; bodyweight: boolean }>();
-  for (const d of plan.days)
-    for (const e of d.exercises) rowKind.set(e.id, { timed: !!timedSpec(e.reps), bodyweight: isBodyweight(e) });
-  const sortedWeights = [...weights].sort((a, b) => a.measured_on.localeCompare(b.measured_on));
-  /** A sorozat napján (vagy előtte) mért legutóbbi testsúly; ha előtte nincs, az első mérés. */
-  const bodyWeightAt = (iso: string): number | null => {
-    if (sortedWeights.length === 0) return null;
-    let w = sortedWeights[0].weight_kg;
-    for (const m of sortedWeights) if (m.measured_on <= iso) w = m.weight_kg;
-    return Number(w);
-  };
-
   let sets = 0;
-  let volume = 0;
-  for (const l of logs) {
-    for (const s of l.sets) {
-      if (!isSetDone(s)) continue;
-      sets++;
-      const kind = rowKind.get(s.day_exercise_id);
-      if (!s.reps || kind?.timed) continue;
-      if (kind?.bodyweight) {
-        const bw = bodyWeightAt(s.logged_at.slice(0, 10));
-        if (bw !== null) volume += Math.max(0, bw + (s.weight_kg ?? 0)) * s.reps;
-      } else if (s.weight_kg && s.weight_kg > 0) volume += s.weight_kg * s.reps;
-    }
-  }
+  for (const l of logs) for (const s of l.sets) if (isSetDone(s)) sets++;
 
   // Hetek: egy hét kész, ha minden napja kész
   const weeks = new Map<number, string[]>();
@@ -159,16 +133,6 @@ export function computeMilestones(plan: PlanData, logs: WorkoutLog[], weights: B
       [100, 250, 500, 1000, 2500],
       (n) => `${fmt(n)} sorozat`,
       (n) => `${fmt(n)} rögzített sorozat.`,
-    ),
-  );
-
-  out.push(
-    ...ladder(
-      'tonna',
-      Math.floor(volume / 1000),
-      [1, 5, 10, 25, 50, 100],
-      (n) => `${fmt(n)} tonna`,
-      (n) => `Összesen ${fmt(n)} tonnát mozgattál meg (súly × ismétlés).`,
     ),
   );
 

@@ -23,6 +23,8 @@ const INSTAGRAM = '@szekelyzoli_trainer';
 
 export type WeekCard = {
   kind: 'week';
+  /** „Ez a hetem” (aktuális hét), „Múlt hetem”, vagy régebbinél „Edzéshetem”. */
+  title: string;
   /** pl. „nov. 23–29.” */
   range: string;
   /** Hétfőtől vasárnapig. minutes: null, ha nincs érvényes időtartam (utólag rögzítve). */
@@ -181,7 +183,7 @@ function check(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number,
 }
 
 function drawWeek(ctx: CanvasRenderingContext2D, c: WeekCard) {
-  frame(ctx, c.range, 'Ez a hetem');
+  frame(ctx, c.range, c.title);
 
   const left = PAD;
   const right = SHARE_W - PAD;

@@ -55,10 +55,16 @@ export function setProgress(items: PlanExercise[], log: WorkoutLog | undefined) 
   return { done, total };
 }
 
-/** A kg mező placeholderje: az ellenállás elején álló szám, tizedesponttal ("22,5 kg" → "22.5"). */
+/**
+ * A kg mező placeholderje az ellenállásból, tizedesponttal: csak ha kilóban van megadva, vagy puszta szám.
+ * "22,5 kg" → "22.5", "+15 kg" → "15", "10-10 kg" → "10" (kezenként), "35-40 kg" → "35", "60" → "60";
+ * "7-es ellenállás", "sárga gumikötél", "francia rúd + 15 kg" → "" (nem súly, vagy nem a súllyal kezdődik).
+ */
 export function weightPlaceholder(resistance: string | null): string {
-  const m = resistance?.trim().match(/^\d+(?:[.,]\d+)?/);
-  return m ? m[0].replace(',', '.') : '';
+  const r = resistance?.trim() ?? '';
+  const m =
+    r.match(/^\+?\s*(\d+(?:[.,]\d+)?)(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*kg\b/i) ?? r.match(/^\+?\s*(\d+(?:[.,]\d+)?)$/);
+  return m ? m[1].replace(',', '.') : '';
 }
 
 /** Az ismétlés mező placeholderje: az előírás első egész száma. */
@@ -83,7 +89,7 @@ const NO_WEIGHT_EQUIPMENT = new Set(['Saját testsúly', 'Gumikötél / miniband
 export function expectsWeight(item: PlanExercise): boolean {
   const eq = item.exercise.equipment?.trim();
   if (eq) return !NO_WEIGHT_EQUIPMENT.has(eq);
-  return /\d/.test(item.resistance ?? '');
+  return weightPlaceholder(item.resistance) !== '';
 }
 
 /** Időre menő gyakorlat előírása. phases: a visszaszámlálás szakaszai; üres = stopper (max idő). */
