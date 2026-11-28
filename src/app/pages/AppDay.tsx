@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowDown, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Play, Printer, RotateCcw, Trash2, Trophy } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import { AppApiError } from '../../lib/app-api';
 import { useSession } from '../components/app/session';
 import { useRestTimer } from '../components/app/RestTimer';
 import { ShareButton } from '../components/app/ShareButton';
+import { WorkoutSummaryDialog } from '../components/app/WorkoutSummary';
 import { buildWeekCard, weekTitle } from '../components/app/share-data';
 import ExerciseCard from '../components/app/ExerciseCard';
 import { attemptOf, currentLog, groupExercises, isEmptyLog, isSuperset, setProgress } from '../components/app/plan-utils';
@@ -85,6 +86,8 @@ function DayPage() {
   const [askEnd, setAskEnd] = useState(false);
   // Lezáráskor, ha még sok sorozat nincs kipipálva: rákérdezünk
   const [askIncomplete, setAskIncomplete] = useState(false);
+  // Edzés utáni összefoglaló (lezáráskor felugrik, később a gombbal újra megnyitható)
+  const [showSummary, setShowSummary] = useState(false);
 
   // A számláló-sávról vagy az „Edzés folyamatban” sávról érkezve: a megadott gyakorlat első nem kész sorához görgetünk
   useEffect(() => {
@@ -185,7 +188,8 @@ function DayPage() {
       if (ok && date && date !== todayIso() && date !== log?.performed_on) await setWorkoutDate(planDay.id, date);
       // Az edzés vége: a futó pihenő (vagy időmérés) is álljon le
       if (ok && !done) timer.stop();
-      if (ok) toast.success(done ? 'Jegyzet frissítve.' : 'Edzés kész, szép munka!');
+      if (ok && done) toast.success('Jegyzet frissítve.');
+      if (ok && !done) setShowSummary(true);
     } catch {
       toast.error('Nem sikerült menteni. Próbáld újra.');
     } finally {
@@ -549,7 +553,14 @@ function DayPage() {
           {busy ? 'Mentés…' : done ? 'Jegyzet mentése' : 'Edzés kész'}
         </button>
         {done && log && (
-          <div className="flex justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSummary(true)}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-app-line px-4 text-sm font-semibold text-app-navy active:bg-app-navy/5"
+            >
+              <Trophy className="size-4 text-app-teal" /> Összefoglaló
+            </button>
             <ShareButton
               label={`Megosztom: ${weekTitle(workoutDate(log) ?? todayIso()).toLowerCase()}`}
               filename="trainingboost-hetem.png"
@@ -595,6 +606,9 @@ function DayPage() {
           </AlertDialog>
         )}
       </section>
+      {showSummary && done && log && (
+        <WorkoutSummaryDialog plan={plan} logs={logs} planDay={planDay} log={log} onClose={() => setShowSummary(false)} />
+      )}
     </div>
   );
 }

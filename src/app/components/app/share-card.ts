@@ -64,7 +64,21 @@ export type MilestoneCard = {
   icon: 'medal' | 'check';
 };
 
-export type ShareCard = WeekCard | MonthCard | ProgramCard | MilestoneCard;
+export type WorkoutCard = {
+  kind: 'workout';
+  /** pl. „nov. 28., szombat” */
+  date: string;
+  minutes: number | null;
+  sets: number;
+  /** Új rekordok (legfeljebb 3 látszik), pl. { name: 'Goblet guggolás', value: '22,5 kg × 10' }. */
+  records: { name: string; value: string }[];
+  /** Hány gyakorlatban volt jobb, mint legutóbb (a rekordokon felül). */
+  improved: number;
+  workoutsThisWeek: number;
+  streakWeeks: number;
+};
+
+export type ShareCard = WeekCard | MonthCard | ProgramCard | MilestoneCard | WorkoutCard;
 
 const font = (weight: number, size: number, family = SANS) => `${weight} ${size}px ${family}`;
 
@@ -361,11 +375,67 @@ function drawMilestone(ctx: CanvasRenderingContext2D, c: MilestoneCard) {
   ctx.textAlign = 'left';
 }
 
+function drawWorkout(ctx: CanvasRenderingContext2D, c: WorkoutCard) {
+  frame(ctx, c.date, 'Edzés kész');
+
+  // Nagy számok
+  let y = 860;
+  let x = PAD;
+  if (c.minutes) x = bigStat(ctx, String(c.minutes), 'perc', x, y) + 90;
+  if (c.sets > 0) bigStat(ctx, String(c.sets), 'sorozat', c.minutes ? Math.max(x, 560) : PAD, y);
+
+  // Rekordok
+  y = 1040;
+  if (c.records.length > 0) {
+    ctx.font = font(600, 40);
+    ctx.fillStyle = C.teal;
+    ctx.fillText(c.records.length > 1 ? `${c.records.length} ÚJ REKORD` : 'ÚJ REKORD', PAD, y);
+    y += 40;
+    for (const r of c.records.slice(0, 3)) {
+      ctx.fillStyle = C.card;
+      roundRect(ctx, PAD, y, SHARE_W - 2 * PAD, 130, 24);
+      ctx.fill();
+      ctx.font = font(600, 44);
+      ctx.fillStyle = C.text;
+      const valueW = (() => {
+        ctx.font = font(700, 48, DISPLAY);
+        return ctx.measureText(r.value).width;
+      })();
+      ctx.font = font(600, 44);
+      const name = wrap(ctx, r.name, SHARE_W - 2 * PAD - valueW - 100, 1)[0];
+      ctx.fillText(name, PAD + 36, y + 82);
+      ctx.font = font(700, 48, DISPLAY);
+      ctx.fillStyle = C.teal;
+      ctx.textAlign = 'right';
+      ctx.fillText(r.value, SHARE_W - PAD - 36, y + 84);
+      ctx.textAlign = 'left';
+      y += 154;
+    }
+    y += 40;
+  }
+
+  const extras = [
+    c.improved > 0 ? `${c.improved} gyakorlatban jobb, mint legutóbb` : null,
+    c.workoutsThisWeek > 1 ? `${c.workoutsThisWeek}. edzés ezen a héten` : null,
+    c.streakWeeks > 1 ? `${c.streakWeeks} hét egymás után` : null,
+  ].filter(Boolean) as string[];
+  ctx.font = font(400, 46);
+  ctx.fillStyle = C.muted;
+  // Ami nem fér el a lábléc fölé, kimarad
+  let ey = c.records.length ? y + 30 : 1120;
+  for (const t of extras) {
+    if (ey > 1670) break;
+    ctx.fillText(t, PAD, ey);
+    ey += 70;
+  }
+}
+
 /** A kártya rajza egy canvasra (a tesztekhez és az előnézethez is). */
 export function drawCard(ctx: CanvasRenderingContext2D, card: ShareCard) {
   if (card.kind === 'week') drawWeek(ctx, card);
   else if (card.kind === 'month') drawMonth(ctx, card);
   else if (card.kind === 'program') drawProgram(ctx, card);
+  else if (card.kind === 'workout') drawWorkout(ctx, card);
   else drawMilestone(ctx, card);
 }
 
